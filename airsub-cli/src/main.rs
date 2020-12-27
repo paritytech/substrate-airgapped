@@ -1,2 +1,3 @@
-// Stub
-
+fn main() {
+	println!("Stub");
+}

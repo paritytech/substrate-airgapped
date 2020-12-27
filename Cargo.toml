@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-  "airsub-decode",
+  "airsub-types",
   "airsub-sign",
   "airsub-create",
   "airsub-cli",

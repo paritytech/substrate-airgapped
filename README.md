@@ -6,5 +6,5 @@ Tools to facilitate an air-gapped construction, decoding, and signing flow for t
 
 - airsub-cli: CLI that combines all functionality of the available airsub libraries.
 - airsub-create: Create a Call and additional data in preparation for signing.
-- airsub-decode: Decode payloads at various stages in the transaction construction process.
+- airsub-type: Things Frame type related.
 - airsub-sign: Create an `UncheckedExtrinsic` by signing the relevant outputs of airsub-create.

@@ -1,0 +1,18 @@
+[package]
+name = "airsub-types"
+version = "0.1.0"
+authors = ["emostov <32168567+emostov@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+# Parity (non-substrate)
+codec = {  package = "parity-scale-codec", version = "1.3.5", default-features = false }
+
+# Substrate
+# Primitive types for runtime modules
+sp-runtime = { version = "2.0.0", package = "sp-runtime" }
+# Core types for substrate
+sp-core = { version = "2.0.0", package = "sp-core" }
