@@ -8,3 +8,5 @@ Tools to facilitate an air-gapped construction, decoding, and signing flow for t
 - substrate-airgapped-create: Create a Call and additional data in preparation for signing.
 - substrate-airgapped-type: Things FRAME type related.
 - substrate-airgapped-sign: Create an `UncheckedExtrinsic` by signing the relevant outputs of substrate-airgapped-create.
+
+Note: The code here is heavily inspired by [paritytech/substrate-subxt](https://github.com/paritytech/substrate-subxt)
