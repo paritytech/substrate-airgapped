@@ -1,8 +1,8 @@
 [workspace]
 
 members = [
-  "airsub-types",
-  "airsub-sign",
-  "airsub-create",
-  "airsub-cli",
+  "substrate-airgapped-types",
+  "substrate-airgapped-sign",
+  "substrate-airgapped-create",
+  "substrate-airgapped-cli",
 ]

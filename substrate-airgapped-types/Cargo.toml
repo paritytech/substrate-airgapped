@@ -1,5 +1,5 @@
 [package]
-name = "airsub-types"
+name = "substrate-airgapped-types"
 version = "0.1.0"
 authors = ["emostov <32168567+emostov@users.noreply.github.com>"]
 edition = "2018"
