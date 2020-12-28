@@ -1,4 +1,4 @@
-use crate::runtime::{Balances, System};
+use crate::frame::{balances::Balances, system::System};
 use codec::{Decode, Encode};
 use core::{fmt::Debug, marker::PhantomData};
 use sp_runtime::{generic::Era, traits::SignedExtension, transaction_validity::TransactionValidityError};
@@ -12,8 +12,6 @@ use sp_runtime::{generic::Era, traits::SignedExtension, transaction_validity::Tr
 ///
 /// This is modified from the substrate version to allow passing in of the version, which is
 /// returned via `additional_signed()`.
-
-/// Ensure the runtime version registered in the transaction is the same as at present.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Debug)]
 pub struct CheckSpecVersion<T: System>(
 	pub PhantomData<T>,
