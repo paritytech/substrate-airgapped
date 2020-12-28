@@ -1,7 +1,9 @@
 use codec::{Codec, EncodeLike};
 use core::fmt::Debug;
 
+/// pallet balances
 pub mod balances;
+/// pallet system
 pub mod system;
 
 /// A type that can be used as a parameter in a dispatchable function. Defined here so we don't have

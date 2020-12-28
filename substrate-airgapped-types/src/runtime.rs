@@ -1,6 +1,6 @@
 use crate::extra::{DefaultExtra, SignedExtra};
 use crate::frame::{balances::Balances, system::System};
-use codec::Encode;
+use codec::{Decode, Encode};
 use core::fmt::Debug;
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
@@ -10,11 +10,12 @@ use sp_runtime::{
 /// Trait to encompassing types from a runtime and its pallets.
 pub trait Runtime: System + Sized + Send + Sync + 'static {
 	/// Signature type.
-	type Signature: Verify + Encode + Send + Sync + 'static;
+	type Signature: Verify + Encode + Debug + Decode + Eq + Send + Sync + Clone + 'static;
 	/// Transaction extras.
-	type Extra: SignedExtra<Self> + Send + Sync + 'static;
+	type Extra: SignedExtra<Self> + Send + Decode + Sync + 'static;
 }
 
+/// Polkadot runtime specific types (should work with Kusama as well)
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PolkadotRuntime;
 

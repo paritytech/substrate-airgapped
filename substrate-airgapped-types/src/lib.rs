@@ -5,9 +5,15 @@ use codec::{Decode, Encode, Input};
 use core::{fmt::Debug, marker::PhantomData};
 
 mod extra;
-mod frame;
+/// Each sub-module correlates directly to a frame pallet
+pub mod frame;
 mod runtime;
 mod unchecked_extrinsic;
+
+pub use crate::{
+	unchecked_extrinsic::UncheckedExtrinsic,
+	runtime::PolkadotRuntime,
+};
 
 /// Wraps an already encoded byte vector, prevents being encoded as a raw byte vector as part of
 /// the transaction payload
