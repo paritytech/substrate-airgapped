@@ -6,14 +6,14 @@ use sp_runtime::traits::{AtLeast32Bit, MaybeSerialize, Member};
 pub trait Balances: System {
 	/// The balance of an account.
 	type Balance: Parameter
-		+ Member
-		+ AtLeast32Bit
 		+ codec::Codec
 		+ Default
 		+ Copy
-		+ MaybeSerialize
 		+ Debug
-		+ From<<Self as System>::BlockNumber>;
+		+ From<<Self as System>::BlockNumber>
+		+ Member
+		+ AtLeast32Bit
+		+ MaybeSerialize;
 }
 
 /// Transfer some liquid free balance to another account.

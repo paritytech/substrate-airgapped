@@ -10,7 +10,7 @@ fn main() -> () {
 
 	type Ext = UncheckedExtrinsic<PolkadotRuntime, TransferCall<PolkadotRuntime>>;
 
-	let result: Ext = Decode::decode(&'a mut balances_transfer_alice[..]).unwrap();
+	let result: Ext = Decode::decode(&mut &balances_transfer_alice[..]).unwrap();
 
 	println!("Decoded ext: {:#?}", result);
 

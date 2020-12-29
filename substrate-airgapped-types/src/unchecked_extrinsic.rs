@@ -44,6 +44,7 @@ where
 
 		let is_signed = version & 0b1000_0000 != 0;
 		let version = version & 0b0111_1111;
+		println!("tx version found {} vs {}", version, TRANSACTION_VERSION);
 		if version != TRANSACTION_VERSION {
 			return Err("Invalid transaction version".into());
 		}
