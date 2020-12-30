@@ -10,3 +10,9 @@ pub mod system;
 // to require frame-system (TODO Not yet sure if this is an ok approach)
 pub trait Parameter: Codec + EncodeLike + Clone + Eq + Debug {}
 impl<T> Parameter for T where T: Codec + EncodeLike + Clone + Eq + Debug {}
+
+/// Associates args struct with method name
+pub trait CallMethod{
+	/// Name of the method, as it appears in metadata
+	fn method(&self) -> &'static str;
+}

@@ -1,4 +1,4 @@
-use crate::Encoded;
+use crate::{ frame::CallMethod, Encoded};
 use codec::{Encode, Decode};
 use codec::alloc::collections::HashMap;
 use core::marker::PhantomData;
@@ -26,17 +26,16 @@ pub struct ModuleWithCalls {
 }
 
 impl ModuleWithCalls {
-    pub fn call<T: Encode + Decode>(
+    pub fn encode_call<T: Encode + Decode, U: CallMethod + Encode>(
         &self,
-        function: &'static str,
-        params: T,
+       	call: U,
     ) -> Result<Encoded<T>,  String> {
         let fn_index = self
             .calls
-            .get(function)
-            .ok_or(format!("Call not found {}", function))?;
+            .get(call.method())
+            .ok_or(format!("Call not found {}", call.method()))?;
         let mut bytes = vec![self.index, *fn_index];
-        bytes.extend(params.encode());
+        bytes.extend(call.encode());
         Ok(Encoded::<T>(bytes, PhantomData::<T>))
     }
 }

@@ -11,4 +11,8 @@ Tools to facilitate an air-gapped construction, decoding, and signing flow for t
 
 Note: The code here is heavily inspired by [paritytech/substrate-subxt](https://github.com/paritytech/substrate-subxt)
 
-Hopefully will eventually be able to use: https://github.com/ascjones/chameleon
+Other notes:
+
+- Hopefully will eventually be able to use: https://github.com/ascjones/chameleon
+- Remove any substrate deps for signing part
+- Implement no_std
