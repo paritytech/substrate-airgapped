@@ -11,7 +11,15 @@ edition = "2018"
 # Parity (non-substrate)
 codec = { package = "parity-scale-codec", version = "1.3.5", default-features = false, features = ["derive", "full"] }
 
-# Substrate
+# Substrate (hopefully most of these can be removed)
 sp-runtime = { version = "2.0.0", package = "sp-runtime" }
 sp-core = "2.0.0"
 sp-std = "2.0.0"
+frame-metadata = { version = "12", package = "frame-metadata" }
+
+[dev-dependencies]
+# Currently all of these are just to get the example going
+sp-keyring = { version = "2.0.0", package = "sp-keyring" }
+serde = { version = "1.0.115", features = ["derive"] }
+hex = "0.4.2"
+serde_json = "1.0.57"

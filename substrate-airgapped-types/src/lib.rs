@@ -7,15 +7,12 @@ use core::{fmt::Debug, marker::PhantomData};
 mod extra;
 mod runtime;
 mod unchecked_extrinsic;
-mod metadata;
 
-pub use crate::{
-	unchecked_extrinsic::UncheckedExtrinsic,
-	runtime::PolkadotRuntime,
-};
+pub use crate::{runtime::PolkadotRuntime, unchecked_extrinsic::UncheckedExtrinsic};
 
 /// Each sub-module correlates directly to a frame pallet
 pub mod frame;
+pub mod metadata;
 
 /// Wraps an already encoded byte vector, prevents being encoded as a raw byte vector as part of
 /// the transaction payload

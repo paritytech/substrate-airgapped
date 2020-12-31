@@ -31,8 +31,14 @@ pub struct TransferArgs<T: Balances + System> {
 	#[codec(compact)]
 	pub amount: T::Balance,
 }
-impl<T> super::CallMethod for TransferArgs<T> where T: Balances + System,{
+impl<T> super::CallMethod for TransferArgs<T>
+where
+	T: Balances + System,
+{
 	fn method(&self) -> &'static str {
 		"Transfer"
+	}
+	fn pallet(&self) -> &'static str {
+		"Balances"
 	}
 }

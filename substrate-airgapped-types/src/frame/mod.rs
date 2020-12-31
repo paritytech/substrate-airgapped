@@ -12,7 +12,8 @@ pub trait Parameter: Codec + EncodeLike + Clone + Eq + Debug {}
 impl<T> Parameter for T where T: Codec + EncodeLike + Clone + Eq + Debug {}
 
 /// Associates args struct with method name
-pub trait CallMethod{
+pub trait CallMethod {
 	/// Name of the method, as it appears in metadata
 	fn method(&self) -> &'static str;
+	fn pallet(&self) -> &'static str;
 }
