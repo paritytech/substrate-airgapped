@@ -1,7 +1,9 @@
 use crate::frame::{balances::Balances, system::System};
 use codec::{Decode, Encode};
 use core::{fmt::Debug, marker::PhantomData};
-use sp_runtime::{generic::Era, traits::SignedExtension, transaction_validity::TransactionValidityError};
+use sp_runtime::{
+	generic::Era, traits::SignedExtension, transaction_validity::TransactionValidityError,
+};
 
 /// SignedExtra checks copied from substrate, in order to remove requirement to implement
 /// substrate's `frame_system::Trait`

@@ -11,7 +11,14 @@ pub trait System {
 	// type Index: Parameter + Member + MaybeSerialize + Debug + Default + MaybeDisplay + AtLeast32Bit + Copy;
 
 	/// The block number type used by the runtime.
-	type BlockNumber: Parameter + Send + Sync + Debug + Default + Copy + std::hash::Hash + std::str::FromStr;
+	type BlockNumber: Parameter
+		+ Send
+		+ Sync
+		+ Debug
+		+ Default
+		+ Copy
+		+ std::hash::Hash
+		+ std::str::FromStr;
 	// + Member
 	// + MaybeMallocSizeOf
 	// + MaybeSerializeDeserialize
@@ -20,7 +27,16 @@ pub trait System {
 	// + Bounded;
 
 	/// The output of the `Hashing` function.
-	type Hash: Parameter + Send + Sync + std::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Default + Copy + Ord + Debug;
+	type Hash: Parameter
+		+ Send
+		+ Sync
+		+ std::hash::Hash
+		+ AsRef<[u8]>
+		+ AsMut<[u8]>
+		+ Default
+		+ Copy
+		+ Ord
+		+ Debug;
 	// + Member
 	// + MaybeMallocSizeOf
 	// + MaybeSerializeDeserialize

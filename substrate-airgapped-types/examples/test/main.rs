@@ -22,8 +22,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 	let base_path = env::current_dir()?;
 
-	let path_to_metadata =
-		base_path.clone().join("substrate-airgapped-types").join("examples").join("test").join("metadata.json");
+	let path_to_metadata = base_path
+		.clone()
+		.join("substrate-airgapped-types")
+		.join("examples")
+		.join("test")
+		.join("metadata.json");
 
 	let metadata = rpc_to_bytes(path_to_metadata)?;
 	let metadata_prefixed: RuntimeMetadataPrefixed = Decode::decode(&mut &opts.metadata[..])?;

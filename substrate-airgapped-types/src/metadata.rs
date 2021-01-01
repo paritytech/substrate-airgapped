@@ -1,11 +1,14 @@
+// use crate::frame::CallMethod;
 use crate::{frame::CallMethod, Encoded};
 use codec::alloc::collections::HashMap;
-use codec::{Decode, Encode};
 use core::{convert::TryFrom, marker::PhantomData};
 
-use frame_metadata::{DecodeDifferent, RuntimeMetadata, RuntimeMetadataPrefixed, META_RESERVED};
+pub use frame_metadata::{
+	DecodeDifferent, RuntimeMetadata, RuntimeMetadataPrefixed, META_RESERVED,
+};
 
 /// Runtime metadata.
+#[derive(Clone, Debug)]
 pub struct Metadata {
 	modules_with_calls: HashMap<String, ModuleWithCalls>,
 }
@@ -17,9 +20,9 @@ impl Metadata {
 		self.modules_with_calls.get(&name).ok_or(format!("Module not found {}", name))
 	}
 
-	/// Encode a call
-	pub fn encode_call<T: Encode + Decode, U: CallMethod + Encode>(&self, call: U) -> Result<Encoded<T>, String> {
-		Ok(self.module_with_calls(call.method()).and_then(|module| module.encode_call(call))?)
+	/// Encode a call with the bytes wrapped in `Encoded`
+	pub fn encode_call<C: CallMethod>(&self, call: C) -> Result<Encoded<C>, String> {
+		self.module_with_calls(call.pallet())?.encode_call_encoded(call)
 	}
 }
 
@@ -31,11 +34,21 @@ struct ModuleWithCalls {
 }
 
 impl ModuleWithCalls {
-	fn encode_call<T: Encode + Decode, U: CallMethod + Encode>(&self, call: U) -> Result<Encoded<T>, String> {
-		let fn_index = self.calls.get(call.method()).ok_or(format!("Call not found {}", call.method()))?;
+	/// TODO comment
+	fn encode_call_encoded<C: CallMethod>(&self, call: C) -> Result<Encoded<C>, String> {
+		let bytes = self.encode_call(call)?;
+
+		Ok(Encoded::<C>(bytes, PhantomData::<C>))
+	}
+
+	/// TODO maybe delete this
+	fn encode_call<C: CallMethod>(&self, call: C) -> Result<Vec<u8>, String> {
+		let fn_index =
+			self.calls.get(call.method()).ok_or(format!("Call not found {}", call.method()))?;
 		let mut bytes = vec![self.index, *fn_index];
 		bytes.extend(call.encode());
-		Ok(Encoded::<T>(bytes, PhantomData::<T>))
+
+		Ok(bytes)
 	}
 }
 
@@ -51,25 +64,24 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 			_ => return Err("Invalid metadata version".into()),
 		};
 
-		let modules_with_calls =
-			convert(meta.modules)?.into_iter().fold(Ok(HashMap::new()), |modules_map, module| {
-				if let Some(calls_meta) = module.calls {
-					let calls =
-						convert(calls_meta)?.into_iter().enumerate().fold(Ok(HashMap::new()), |acc, (index, call)| {
-							let call_name = convert(call.name)?;
-							acc?.insert(call_name, index as u8);
-							acc
-						});
-
-					let module_name = convert(module.name)?;
-					modules_map?
-						.insert(module_name.clone(), ModuleWithCalls { index: module.index, name: module_name, calls: calls? });
+		let mut modules_with_calls = HashMap::new();
+		for module in convert(meta.modules)?.into_iter() {
+			if let Some(calls_meta) = module.calls {
+				let mut calls = HashMap::new();
+				for (index, call) in convert(calls_meta)?.into_iter().enumerate() {
+					let call_name = convert(call.name)?;
+					calls.insert(call_name, index as u8);
 				}
 
-				modules_map
-			})?;
+				let module_name = convert(module.name)?;
+				modules_with_calls.insert(
+					module_name.clone(),
+					ModuleWithCalls { index: module.index, name: module_name, calls },
+				);
+			}
+		}
 
-		Ok(Metadata { modules_with_calls })
+		Ok(Metadata { modules_with_calls: modules_with_calls })
 	}
 }
 
