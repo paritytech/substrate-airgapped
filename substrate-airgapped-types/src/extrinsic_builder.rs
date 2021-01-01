@@ -93,12 +93,12 @@ impl<C: CallMethod + Clone, R: System + Balances> ExtrinsicClient<C, R> {
 	}
 
 	/// Encode the call method specified by the call_options
-	pub fn encode_call(&self, call_struct: C) -> Option<Encoded<C>> {
-		self.metadata.encode_call(call_struct.clone()).ok()
+	pub fn encode_call(&self, call_struct: C) -> Result<Encoded<C>, String> {
+		self.metadata.encode_call(call_struct.clone())
 	}
 
 	/// Decode a call that is wrapped in Encoded
-	pub fn decode_call(encoded_call: Encoded<C>) -> Result<C, String> {
+	pub fn decode_call(&self, encoded_call: Encoded<C>) -> Result<C, String> {
 		let bytes = encoded_call.0;
 		Ok(C::decode(&mut &bytes[..]).expect("TODO make better errors"))
 	}
