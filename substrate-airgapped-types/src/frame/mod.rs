@@ -18,3 +18,14 @@ pub trait CallMethod: Encode + Decode + Sized {
 	/// Name of the pallet, as it appears in metadata
 	fn pallet(&self) -> &'static str;
 }
+
+/// Call arguments with the module and call index
+#[derive(Clone, Debug, PartialEq, Encode, Decode)]
+pub struct CallWithIndex<C: CallMethod> {
+	/// Index of the module in the metadata
+	pub module_index: u8,
+	/// Index of the call in the module
+	pub call_index: u8,
+	/// Call method args
+	pub args: C,
+}

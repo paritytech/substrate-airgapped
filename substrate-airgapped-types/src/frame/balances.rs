@@ -24,19 +24,19 @@ pub trait Balances: System {
 /// If the sender's account is below the existential deposit as a result
 /// of the transfer, the account will be reaped.
 #[derive(Clone, Debug, PartialEq, Encode, Decode)]
-pub struct TransferArgs<T: Balances + System> {
+pub struct Transfer<T: Balances + System> {
 	/// Destination of the transfer.
 	pub to: <T as System>::Address,
 	/// Amount to transfer.
 	#[codec(compact)]
 	pub amount: T::Balance,
 }
-impl<T> super::CallMethod for TransferArgs<T>
+impl<T> super::CallMethod for Transfer<T>
 where
 	T: Balances + System,
 {
 	fn method(&self) -> &'static str {
-		"Transfer"
+		"transfer"
 	}
 	fn pallet(&self) -> &'static str {
 		"Balances"

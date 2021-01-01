@@ -4,6 +4,7 @@
 use codec::{Decode, Encode, Input};
 use core::{fmt::Debug, marker::PhantomData};
 
+mod era;
 mod extra;
 mod hashing;
 mod runtime;

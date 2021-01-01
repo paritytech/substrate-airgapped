@@ -1,4 +1,10 @@
-use crate::frame::{balances::Balances, system::System, CallMethod};
+use crate::{
+	era::Era,
+	extra::{ SignedExtra},
+	frame::{balances::Balances, system::System, CallMethod, CallWithIndex},
+	runtime::Runtime,
+	signed_payload::SignedPayload,
+};
 use crate::{
 	// unchecked_extrinsic::UncheckedExtrinsic,
 	// signed_payload::SignedPayload,
@@ -7,7 +13,9 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use core::convert::TryInto;
+use core::fmt::Debug;
 use hex;
+use sp_runtime::traits::SignedExtension;
 
 // 1) Figure out how to encode call
 // 2) Use encode call to create SignedPayload
@@ -15,6 +23,7 @@ use hex;
 // 4) Use signature to create unchecked extrinsic
 
 /// Airgapped Substrate Call variants // TODO does this need to be public?
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum AirCall<C: Encode + Decode> {
 	/// Encoded call method arguments
 	Encoded(Encoded<C>),
@@ -28,19 +37,22 @@ pub enum Mortality<R: System> {
 	Mortal(u64, R::Hash),
 	/// Specify a immortal transaction
 	Immortal,
+	/// Already built substrate Era variant
+	Built(Era),
 }
 
 /// TODO should this or similar be public
 pub struct CallOptions<C: CallMethod + Clone, R: System + Balances> {
-	call: Option<AirCall<C>>,
-	nonce: Option<R::Index>,
-	era: Option<Mortality<R>>
+	call: AirCall<C>,
+	nonce: R::Index,
+	// era: Mortality<R>,
 }
 
 /// Metadata necessary for extrinsic construction
 pub struct ExtrinsicClient<C: CallMethod + Clone, R: System + Balances> {
 	/// Decoded runtime metadata
-	pub metadata: Metadata, /// TODO make getters?
+	pub metadata: Metadata,
+	/// TODO make getters?
 	/// Runtime spec version
 	pub spec_version: u32,
 	/// Tx version used in the runtime
@@ -50,37 +62,46 @@ pub struct ExtrinsicClient<C: CallMethod + Clone, R: System + Balances> {
 	call_options: CallOptions<C, R>,
 }
 
-impl<C: CallMethod + Clone, R: System + Balances> ExtrinsicClient<C, R> {
+impl<C, R> ExtrinsicClient<C, R>
+where
+	C: CallMethod + Clone,
+	R: System + Balances + Runtime + Clone + Debug + Eq + Send + Sync,
+	<<R::Extra as SignedExtra<R>>::Extra as SignedExtension>::AdditionalSigned: Send + Sync,
+{
 	/// encoded_meta: Hex string of metadata
 	pub fn new(
 		encoded_meta: &str,
 		spec_version: u32,
 		tx_version: u32,
-		genesis_hash: R::Hash
+		genesis_hash: R::Hash,
+		call_options: CallOptions<C, R>,
 	) -> Result<ExtrinsicClient<C, R>, String> {
 		Ok(ExtrinsicClient {
 			metadata: Self::metadata_from_hex(encoded_meta)?,
 			spec_version,
 			tx_version,
 			genesis_hash,
-			call_options: CallOptions { call: None, nonce: None, era: None },
+			call_options,
 		})
 	}
 
-	/// Build the call TODO this should create a new thing, not return Self
-	/// should take call struct and nonce, era and tip are optional so can be set later
-	pub fn set_call_options(
-		&mut self,
-		call_struct: C,
-		nonce: R::Index,
-		era: Mortality<R>,
-	) -> &Self {
-		self.call_options.call = Some(AirCall::Plain(call_struct));
-		self.call_options.nonce = Some(nonce);
-		self.call_options.era = Some(era);
+	// TODO make extrinsic constructor builder that finds call index and then returns an object for the call
+	// that uses call index to encode/decode
 
-		self
-	}
+	// /// Build the call TODO this should create a new thing, not return Self
+	// /// should take call struct and nonce, era and tip are optional so can be set later
+	// pub fn set_call_options(
+	// 	&mut self,
+	// 	call_struct: C,
+	// 	nonce: R::Index,
+	// 	era: Mortality<R>,
+	// ) -> &Self {
+	// 	self.call_options.call = Some(AirCall::Plain(call_struct));
+	// 	self.call_options.nonce = Some(nonce);
+	// 	self.call_options.era = Some(era);
+
+	// 	self
+	// }
 
 	// TODO create a struct for tx metadata, then have ExtrinsicBuilder Point to it so they can share metadata
 	/// Metadata hex string must not have leading 0x
@@ -100,6 +121,45 @@ impl<C: CallMethod + Clone, R: System + Balances> ExtrinsicClient<C, R> {
 	/// Decode a call that is wrapped in Encoded
 	pub fn decode_call(&self, encoded_call: Encoded<C>) -> Result<C, String> {
 		let bytes = encoded_call.0;
-		Ok(C::decode(&mut &bytes[..]).expect("TODO make better errors"))
+		// TODO find a way to display
+		let _module_index = bytes[0];
+		let _call_index = bytes[1];
+		let mut args = &bytes[2..];
+		Ok(C::decode(&mut args).expect("TODO decode_call"))
+	}
+
+	/// Decode a call and include the module and call index
+	pub fn decode_call_with_index(
+		&self,
+		encoded_call: Encoded<C>,
+	) -> Result<CallWithIndex<C>, String> {
+		let bytes = encoded_call.0;
+
+		Ok(CallWithIndex {
+			module_index: bytes[0],
+			call_index: bytes[1],
+			args: C::decode(&mut &bytes[2..]).expect("TODO decode_call_with_index"),
+		})
+	}
+
+	/// Create a `SignedPayload`, which can be signed to create a signature for the transaction.
+	pub fn create_signing_payload(&mut self) -> Result<SignedPayload<C, <<R as Runtime>::Extra as SignedExtra<R>>::Extra>, String> {
+		let encoded = match self.call_options.call.clone() {
+			AirCall::Plain(call) => self.encode_call(call)?,
+			AirCall::Encoded(encoded_call) => encoded_call,
+		};
+
+		// TODO make this configurable
+		let era_info = (Era::immortal(), None::<R::Hash>);
+
+		let extra = R::Extra::new(
+			self.spec_version,
+			self.tx_version,
+			self.call_options.nonce,
+			self.genesis_hash,
+			era_info,
+		);
+
+		Ok(SignedPayload::new(encoded, extra.extra()).expect("TODO"))
 	}
 }
