@@ -9,10 +9,9 @@ This is very much a work in progress is not yet a MVP.
 - substrate-airgapped-cli: CLI that combines all functionality of the available substrate-airgapped libraries.
 - substrate-airgapped-type: Where core components & functionality is being built out
 
-
 Note: The code here is heavily inspired by [paritytech/substrate-subxt](https://github.com/paritytech/substrate-subxt)
 
-Notes:: notes:
+## Major TODOs
 
 - Hopefully will eventually be able to use: https://github.com/ascjones/chameleon
 - Remove any substrate deps for signing portions
