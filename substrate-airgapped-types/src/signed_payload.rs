@@ -1,5 +1,6 @@
-use crate::{Encoded, frame::CallMethod, hashing::blake2_256};
+use crate::{frame::CallMethod, hashing::blake2_256, Encoded};
 use codec::Encode;
+use sp_core::Pair;
 use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidityError};
 
 /// A payload that has been signed for an unchecked extrinsics.
@@ -27,9 +28,8 @@ where
 		Ok(Self(raw_payload))
 	}
 
-	/// Create new `SignedPayload` from raw components.
-	pub fn from_raw(call: Encoded<Call>, extra: Extra, additional_signed: Extra::AdditionalSigned) -> Self {
-		Self((call, extra, additional_signed))
+	pub fn sign<P: Pair>(&self, pair: P) -> P::Signature {
+		self.using_encoded(|payload| pair.sign(payload))
 	}
 }
 

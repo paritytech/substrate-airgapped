@@ -1,20 +1,21 @@
 use crate::{
 	era::Era,
-	extra::{ SignedExtra},
+	extra::SignedExtra,
 	frame::{balances::Balances, system::System, CallMethod, CallWithIndex},
 	runtime::Runtime,
 	signed_payload::SignedPayload,
 };
 use crate::{
-	// unchecked_extrinsic::UncheckedExtrinsic,
 	// signed_payload::SignedPayload,
 	metadata::{Metadata, RuntimeMetadataPrefixed},
+	unchecked_extrinsic::UncheckedExtrinsic,
 	Encoded,
 };
 use codec::{Decode, Encode};
 use core::convert::TryInto;
 use core::fmt::Debug;
 use hex;
+use sp_core::Pair;
 use sp_runtime::traits::SignedExtension;
 
 // 1) Figure out how to encode call
@@ -43,8 +44,9 @@ pub enum Mortality<R: System> {
 
 /// TODO should this or similar be public
 pub struct CallOptions<C: CallMethod + Clone, R: System + Balances> {
-	call: AirCall<C>,
-	nonce: R::Index,
+	pub call: AirCall<C>,
+	pub nonce: R::Index,
+	pub signed: R::Address,
 	// era: Mortality<R>,
 }
 
@@ -143,7 +145,9 @@ where
 	}
 
 	/// Create a `SignedPayload`, which can be signed to create a signature for the transaction.
-	pub fn create_signing_payload(&mut self) -> Result<SignedPayload<C, <<R as Runtime>::Extra as SignedExtra<R>>::Extra>, String> {
+	pub fn create_signing_payload(
+		&mut self,
+	) -> Result<SignedPayload<C, <<R as Runtime>::Extra as SignedExtra<R>>::Extra>, String> {
 		let encoded = match self.call_options.call.clone() {
 			AirCall::Plain(call) => self.encode_call(call)?,
 			AirCall::Encoded(encoded_call) => encoded_call,
@@ -161,5 +165,37 @@ where
 		);
 
 		Ok(SignedPayload::new(encoded, extra.extra()).expect("TODO"))
+	}
+
+	/// Create a signed unchecked extrinsic
+	pub fn create_unchecked_extrinsic(
+		&mut self,
+		signature: R::Signature,
+	) -> Result<UncheckedExtrinsic<R, C, R::Extra>, String> {
+		let encoded = match self.call_options.call.clone() {
+			// TODO factor this out for reuse
+			AirCall::Plain(call) => self.encode_call(call)?,
+			AirCall::Encoded(encoded_call) => encoded_call,
+		};
+
+		// TODO make this configurable
+		let era_info = (Era::immortal(), None::<R::Hash>);
+
+		let extra = R::Extra::new(
+			// TODO factor this out for reuse
+			self.spec_version,
+			self.tx_version,
+			self.call_options.nonce,
+			self.genesis_hash,
+			era_info,
+		);
+		let ext = UncheckedExtrinsic::new_signed(
+			encoded,
+			self.call_options.signed.clone(),
+			signature,
+			extra,
+		);
+
+		Ok(ext)
 	}
 }

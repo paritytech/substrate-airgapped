@@ -1,8 +1,8 @@
 use sp_keyring::AccountKeyring;
 use std::env;
 use substrate_airgapped_types::{
-	extrinsic_builder::ExtrinsicClient,
-	frame::{balances::TransferArgs, CallMethod},
+	extrinsic_builder::{AirCall, CallOptions, ExtrinsicClient},
+	frame::balances::Transfer,
 	PolkadotRuntime,
 };
 
@@ -14,24 +14,19 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let dest = AccountKeyring::Bob.to_account_id().into();
-
-	let transfer = TransferArgs::<PolkadotRuntime> { to: dest, amount: 1_000_000_000 as u128 };
-
 	let base_path =
 		env::current_dir()?.join("substrate-airgapped-types").join("examples").join("test");
-
 	let path_to_metadata = base_path.clone().join("metadata.json");
-
 	let path_to_genesis = base_path.join("genesis.json");
 
 	let hex_meta = rpc_to_hex(path_to_metadata)?;
 	let genesis_hash = rpc_to_bytes(path_to_genesis)?;
-	// TODO this panics
-	let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]);
+	let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]); // TODO this panics
 
-	let client: ExtrinsicClient<TransferArgs<PolkadotRuntime>, PolkadotRuntime> =
-		ExtrinsicClient::new(&hex_meta[..], 26, 4, genesis_hash)?;
+	let transfer = Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 1_000_000 };
+	let call_options = CallOptions { nonce: 0, call: AirCall::Plain(transfer.clone()) };
+	let mut client: ExtrinsicClient<Transfer<PolkadotRuntime>, PolkadotRuntime> =
+		ExtrinsicClient::new(&hex_meta[..], 26, 4, genesis_hash, call_options)?;
 
 	println!("Pre encoded is {:#?}", transfer);
 	let encoded = client.encode_call(transfer).unwrap();
@@ -42,11 +37,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let decoded_with_index = client.decode_call_with_index(encoded);
 	println!("With index is {:#?}", decoded_with_index);
 
-	// let metadata = rpc_to_bytes(path_to_metadata)?;
-	// let metadata_prefixed: RuntimeMetadataPrefixed = Decode::decode(&mut &opts.metadata[..])?;
-	// let metadata: Metadata = metadata_prefixed.try_into()?;
+	let payload = client.create_signing_payload();
+	println!("{:#?}", payload);
 
-	// metadata.encode_call(transfer);
+	let signature = payload.unwrap().sign(AccountKeyring::Alice.pair());
+	println!("Signature: {:#?}", signature);
 
 	Ok(())
 }

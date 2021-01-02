@@ -1,5 +1,6 @@
-use crate::{extra::SignedExtra, frame::system::System, runtime::Runtime};
+use crate::{extra::SignedExtra, frame::system::System, runtime::Runtime, Encoded};
 use codec::{self, Decode, Encode, Input};
+use sp_runtime::traits::SignedExtension;
 
 const TRANSACTION_VERSION: u8 = 4;
 
@@ -16,22 +17,41 @@ pub type Extra<T> = <<T as Runtime>::Extra as SignedExtra<T>>::Extra;
 /// Type arguments sp-runtime => airgapped:
 /// Call => Encoded<Call>, Address => T as System>::Address, Signature => <T as Runtime>::Signature, Extra => Extra<T>
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct UncheckedExtrinsic<T, C>
+pub struct UncheckedExtrinsic<R, C, Extra>
 where
-	T: System + Runtime,
+	R: System + Runtime,
 	C: Encode + Decode,
+	Extra: SignedExtension,
 {
 	/// The signature, address, number of extrinsics have come before from the same signer and an era
 	/// describing the longevity of this transaction, if this is a signed extrinsic.
-	pub signature: Option<(<T as System>::Address, <T as Runtime>::Signature, Extra<T>)>,
+	pub signature: Option<(<R as System>::Address, <R as Runtime>::Signature, Extra)>,
 	/// The function that should be called.
-	pub function: C,
+	pub function: Encoded<C>,
 }
 
-impl<T, C> Decode for UncheckedExtrinsic<T, C>
+impl<R, C, Extra> UncheckedExtrinsic<R, C, Extra>
 where
-	T: System + Runtime,
+	R: System + Runtime,
 	C: Encode + Decode,
+	Extra: SignedExtension,
+{
+	/// New instance of a signed extrinsic aka "transaction".
+	pub fn new_signed(
+		function: Encoded<C>,
+		signed: <R as System>::Address,
+		signature: <R as Runtime>::Signature,
+		extra: Extra,
+	) -> Self {
+		UncheckedExtrinsic { signature: Some((signed, signature, extra)), function }
+	}
+}
+
+impl<R, C, Extra> Decode for UncheckedExtrinsic<R, C, Extra>
+where
+	R: System + Runtime,
+	C: Encode + Decode,
+	Extra: SignedExtension,
 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
 		// This is a little more complicated than usual since the binary format must be compatible
@@ -56,10 +76,11 @@ where
 	}
 }
 
-impl<T, C> Encode for UncheckedExtrinsic<T, C>
+impl<R, C, Extra> Encode for UncheckedExtrinsic<R, C, Extra>
 where
-	T: System + Runtime,
+	R: System + Runtime,
 	C: Encode + Decode,
+	Extra: SignedExtension,
 {
 	fn encode(&self) -> Vec<u8> {
 		encode_with_vec_prefix::<Self, _>(|v| {
