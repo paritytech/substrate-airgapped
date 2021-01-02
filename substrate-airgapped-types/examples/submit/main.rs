@@ -33,22 +33,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let mut client: ExtrinsicClient<Transfer<PolkadotRuntime>, PolkadotRuntime> =
 		ExtrinsicClient::new(&hex_meta[..], 26, 4, genesis_hash, call_options)?;
 
-	println!("Pre encoded is {:#?}", transfer);
-	let encoded = client.encode_call(transfer).unwrap();
-
-	let decoded = client.decode_call(encoded.clone());
-	println!("Decode is {:#?}", decoded);
-
-	let decoded_with_index = client.decode_call_with_index(encoded);
-	println!("With index is {:#?}", decoded_with_index);
-
 	let payload = client.create_signing_payload();
 	// println!("{:#?}", payload);
 
 	// TODO make local MultiSignature enum
 	let signature =
 		sp_runtime::MultiSignature::Sr25519(payload.unwrap().sign(AccountKeyring::Alice.pair()));
-	println!("Signature: {:#?}", signature);
+	// println!("Signature: {:#?}", signature);
 
 	let unchecked = client.create_unchecked_extrinsic(signature);
 	println!("Unchecked: {:#?}", unchecked);

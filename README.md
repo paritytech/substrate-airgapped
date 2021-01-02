@@ -39,7 +39,7 @@ let my_tx_builder:  TxBuilder<PolkadotTransfer> = transfer_method_index::create_
       to,
       amount,
     },
-    accountId,
+    account_id,
     nonce,
     tip,
     era_period,

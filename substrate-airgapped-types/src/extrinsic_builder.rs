@@ -87,24 +87,6 @@ where
 		})
 	}
 
-	// TODO make extrinsic constructor builder that finds call index and then returns an object for the call
-	// that uses call index to encode/decode
-
-	// /// Build the call TODO this should create a new thing, not return Self
-	// /// should take call struct and nonce, era and tip are optional so can be set later
-	// pub fn set_call_options(
-	// 	&mut self,
-	// 	call_struct: C,
-	// 	nonce: R::Index,
-	// 	era: Mortality<R>,
-	// ) -> &Self {
-	// 	self.call_options.call = Some(AirCall::Plain(call_struct));
-	// 	self.call_options.nonce = Some(nonce);
-	// 	self.call_options.era = Some(era);
-
-	// 	self
-	// }
-
 	// TODO create a struct for tx metadata, then have ExtrinsicBuilder Point to it so they can share metadata
 	/// Metadata hex string must not have leading 0x
 	fn metadata_from_hex(encoded_meta: &str) -> Result<Metadata, String> {
@@ -145,9 +127,7 @@ where
 	}
 
 	/// Create a `SignedPayload`, which can be signed to create a signature for the transaction.
-	pub fn create_signing_payload(
-		&mut self,
-	) -> Result<SignedPayload<C, <<R as Runtime>::Extra as SignedExtra<R>>::Extra>, String> {
+	pub fn create_signing_payload(&mut self) -> Result<SignedPayload<C, R>, String> {
 		let encoded = match self.call_options.call.clone() {
 			AirCall::Plain(call) => self.encode_call(call)?,
 			AirCall::Encoded(encoded_call) => encoded_call,
@@ -162,16 +142,17 @@ where
 			self.call_options.nonce,
 			self.genesis_hash,
 			era_info,
-		);
+		)
+		.extra();
 
-		Ok(SignedPayload::new(encoded, extra.extra()).expect("TODO"))
+		Ok(SignedPayload::new(encoded, extra).expect("TODO"))
 	}
 
 	/// Create a signed unchecked extrinsic
 	pub fn create_unchecked_extrinsic(
 		&mut self,
 		signature: R::Signature,
-	) -> Result<UncheckedExtrinsic<R, C, R::Extra>, String> {
+	) -> Result<UncheckedExtrinsic<R, C>, String> {
 		let encoded = match self.call_options.call.clone() {
 			// TODO factor this out for reuse
 			AirCall::Plain(call) => self.encode_call(call)?,
@@ -188,14 +169,14 @@ where
 			self.call_options.nonce,
 			self.genesis_hash,
 			era_info,
-		);
-		let ext = UncheckedExtrinsic::new_signed(
+		)
+		.extra();
+
+		Ok(UncheckedExtrinsic::new_signed(
 			encoded,
 			self.call_options.signed.clone(),
 			signature,
 			extra,
-		);
-
-		Ok(ext)
+		))
 	}
 }

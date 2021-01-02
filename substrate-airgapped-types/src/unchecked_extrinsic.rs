@@ -8,7 +8,7 @@ const TRANSACTION_VERSION: u8 = 4;
 
 // TODO move this to extra.rs
 /// Extra type.
-pub type Extra<T> = <<T as Runtime>::Extra as SignedExtra<T>>::Extra;
+pub type Extra<R> = <<R as Runtime>::Extra as SignedExtra<R>>::Extra;
 
 /// A extrinsic right from the external world. This is unchecked and so can contain a signature.
 ///
@@ -17,41 +17,38 @@ pub type Extra<T> = <<T as Runtime>::Extra as SignedExtra<T>>::Extra;
 /// Type arguments sp-runtime => airgapped:
 /// Call => Encoded<Call>, Address => T as System>::Address, Signature => <T as Runtime>::Signature, Extra => Extra<T>
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub struct UncheckedExtrinsic<R, C, Extra>
+pub struct UncheckedExtrinsic<R, C>
 where
 	R: System + Runtime,
 	C: Encode + Decode,
-	Extra: SignedExtension,
 {
 	/// The signature, address, number of extrinsics have come before from the same signer and an era
 	/// describing the longevity of this transaction, if this is a signed extrinsic.
-	pub signature: Option<(<R as System>::Address, <R as Runtime>::Signature, Extra)>,
+	pub signature: Option<(<R as System>::Address, <R as Runtime>::Signature, Extra<R>)>,
 	/// The function that should be called.
 	pub function: Encoded<C>,
 }
 
-impl<R, C, Extra> UncheckedExtrinsic<R, C, Extra>
+impl<R, C> UncheckedExtrinsic<R, C>
 where
 	R: System + Runtime,
 	C: Encode + Decode,
-	Extra: SignedExtension,
 {
 	/// New instance of a signed extrinsic aka "transaction".
 	pub fn new_signed(
 		function: Encoded<C>,
 		signed: <R as System>::Address,
 		signature: <R as Runtime>::Signature,
-		extra: Extra,
+		extra: Extra<R>,
 	) -> Self {
 		UncheckedExtrinsic { signature: Some((signed, signature, extra)), function }
 	}
 }
 
-impl<R, C, Extra> Decode for UncheckedExtrinsic<R, C, Extra>
+impl<R, C> Decode for UncheckedExtrinsic<R, C>
 where
 	R: System + Runtime,
 	C: Encode + Decode,
-	Extra: SignedExtension,
 {
 	fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
 		// This is a little more complicated than usual since the binary format must be compatible
@@ -76,11 +73,10 @@ where
 	}
 }
 
-impl<R, C, Extra> Encode for UncheckedExtrinsic<R, C, Extra>
+impl<R, C> Encode for UncheckedExtrinsic<R, C>
 where
 	R: System + Runtime,
 	C: Encode + Decode,
-	Extra: SignedExtension,
 {
 	fn encode(&self) -> Vec<u8> {
 		encode_with_vec_prefix::<Self, _>(|v| {
