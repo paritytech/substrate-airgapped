@@ -1,10 +1,16 @@
-use crate::{
-	era::Era,
-	frame::{balances::Balances, system::System},
-};
 use codec::{Decode, Encode};
 use core::{fmt::Debug, marker::PhantomData};
-use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidityError};
+use sp_runtime::{
+	generic::Era, traits::SignedExtension, transaction_validity::TransactionValidityError,
+};
+
+use crate::{
+	frame::{balances::Balances, system::System},
+	runtime::Runtime,
+};
+
+/// Extra type.
+pub type Extra<T> = <<T as Runtime>::Extra as SignedExtra<T>>::Extra;
 
 /// SignedExtra checks copied from substrate, in order to remove requirement to implement
 /// substrate's `frame_system::Trait`
@@ -15,6 +21,8 @@ use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValid
 ///
 /// This is modified from the substrate version to allow passing in of the version, which is
 /// returned via `additional_signed()`.
+
+/// Ensure the runtime version registered in the transaction is the same as at present.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Debug)]
 pub struct CheckSpecVersion<T: System>(
 	pub PhantomData<T>,
@@ -97,13 +105,14 @@ where
 ///
 /// # Note
 ///
-/// This is modified from the substrate version to allow passing in a hash (either the genesis hash
-/// if immortal or current hash if mortal. The hash is returned via `additional_signed()`.
+/// This is modified from the substrate version to allow passing in of the genesis hash, which is
+/// returned via `additional_signed()`. It assumes therefore `Era::Immortal` (The transaction is
+/// valid forever)
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Debug)]
 pub struct CheckEra<T: System>(
 	/// The default structure for the Extra encoding
 	pub (Era, PhantomData<T>),
-	/// Local hash to be used for `AdditionalSigned`
+	/// Local genesis hash to be used for `AdditionalSigned`
 	#[codec(skip)]
 	pub T::Hash,
 );
@@ -176,19 +185,14 @@ where
 		Ok(())
 	}
 }
+
 /// Trait for implementing transaction extras for a runtime.
 pub trait SignedExtra<T: System>: SignedExtension {
 	/// The type the extras.
 	type Extra: SignedExtension + Send + Sync;
 
 	/// Creates a new `SignedExtra`.
-	fn new(
-		spec_version: u32,
-		tx_version: u32,
-		nonce: T::Index,
-		genesis_hash: T::Hash,
-		era_info: (Era, Option<T::Hash>),
-	) -> Self;
+	fn new(spec_version: u32, tx_version: u32, nonce: T::Index, genesis_hash: T::Hash) -> Self;
 
 	/// Returns the transaction extra.
 	fn extra(&self) -> Self::Extra;
@@ -201,7 +205,6 @@ pub struct DefaultExtra<T: System> {
 	tx_version: u32,
 	nonce: T::Index,
 	genesis_hash: T::Hash,
-	era_info: (Era, Option<T::Hash>),
 }
 
 impl<T: System + Balances + Clone + Debug + Eq + Send + Sync> SignedExtra<T> for DefaultExtra<T> {
@@ -215,23 +218,16 @@ impl<T: System + Balances + Clone + Debug + Eq + Send + Sync> SignedExtra<T> for
 		ChargeTransactionPayment<T>,
 	);
 
-	fn new(
-		spec_version: u32,
-		tx_version: u32,
-		nonce: T::Index,
-		genesis_hash: T::Hash,
-		era_info: (Era, Option<T::Hash>),
-	) -> Self {
-		DefaultExtra { spec_version, tx_version, nonce, genesis_hash, era_info }
+	fn new(spec_version: u32, tx_version: u32, nonce: T::Index, genesis_hash: T::Hash) -> Self {
+		DefaultExtra { spec_version, tx_version, nonce, genesis_hash }
 	}
 
 	fn extra(&self) -> Self::Extra {
-		let era_hash = if let Some(hash) = self.era_info.1 { hash } else { self.genesis_hash };
 		(
 			CheckSpecVersion(PhantomData, self.spec_version),
 			CheckTxVersion(PhantomData, self.tx_version),
 			CheckGenesis(PhantomData, self.genesis_hash),
-			CheckEra((self.era_info.0, PhantomData), era_hash),
+			CheckEra((Era::Immortal, PhantomData), self.genesis_hash),
 			CheckNonce(self.nonce),
 			CheckWeight(PhantomData),
 			ChargeTransactionPayment(<T as Balances>::Balance::default()),

@@ -4,21 +4,19 @@
 use codec::{Decode, Encode, Input};
 use core::{fmt::Debug, marker::PhantomData};
 
-mod era;
-mod extra;
-mod hashing;
+mod extrinsic;
+mod metadata;
 mod runtime;
-mod signed_payload;
-mod unchecked_extrinsic;
+// mod signed_payload;
+// mod unchecked_extrinsic;
 
-pub use crate::{runtime::PolkadotRuntime, unchecked_extrinsic::UncheckedExtrinsic};
+pub use crate::{
+	runtime::PolkadotRuntime,
+	extrinsic::{ TxBuilder, CallIndex}
+};
 
-/// The api for building extrinsics
-pub mod extrinsic_builder;
 /// Each sub-module correlates directly to a frame pallet
 pub mod frame;
-/// FRAME runtime metadata
-pub mod metadata;
 
 /// Wraps an already encoded byte vector, prevents being encoded as a raw byte vector as part of
 /// the transaction payload

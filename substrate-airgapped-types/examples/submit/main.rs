@@ -1,52 +1,25 @@
 use codec::Encode;
-use sp_keyring::AccountKeyring;
-use std::env;
+use hex;
 use substrate_airgapped_types::{
 	extrinsic_builder::{AirCall, CallOptions, ExtrinsicClient},
 	frame::balances::Transfer,
 	PolkadotRuntime,
 };
 
-use hex;
 use serde::{Deserialize, Serialize};
+use sp_keyring::AccountKeyring;
 use std::convert::*;
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let base_path =
-		env::current_dir()?.join("substrate-airgapped-types").join("examples").join("test");
-	let path_to_metadata = base_path.clone().join("metadata.json");
+		env::current_dir()?.join("substrate-airgapped-types").join("examples").join("submit");
 	let path_to_genesis = base_path.join("genesis.json");
-
-	let hex_meta = rpc_to_hex(path_to_metadata)?;
 	let genesis_hash = rpc_to_bytes(path_to_genesis)?;
 	let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]); // TODO this panics
-
-	let transfer = Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 1_000_000 };
-	let call_options = CallOptions {
-		nonce: 0,
-		call: AirCall::Plain(transfer.clone()),
-		signed: AccountKeyring::Alice.to_account_id(),
-	};
-	let mut client: ExtrinsicClient<Transfer<PolkadotRuntime>, PolkadotRuntime> =
-		ExtrinsicClient::new(&hex_meta[..], 26, 4, genesis_hash, call_options)?;
-
-	let payload = client.create_signing_payload();
-	// println!("{:#?}", payload);
-
-	// TODO make local MultiSignature enum
-	let signature =
-		sp_runtime::MultiSignature::Sr25519(payload.unwrap().sign(AccountKeyring::Alice.pair()));
-	// println!("Signature: {:#?}", signature);
-
-	let unchecked = client.create_unchecked_extrinsic(signature);
-	println!("Unchecked: {:#?}", unchecked);
-
-	let submittable = hex::encode(unchecked?.encode());
-
-	println!("Submit this: {:#?}", "0x".to_string() + &submittable);
 
 	Ok(())
 }

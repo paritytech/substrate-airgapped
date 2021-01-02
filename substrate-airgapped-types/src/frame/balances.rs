@@ -1,6 +1,7 @@
-use crate::frame::{system::System, Parameter};
+use crate::frame::system::System;
 use codec::{Decode, Encode};
 use core::fmt::Debug;
+use frame_support::Parameter;
 use sp_runtime::traits::{AtLeast32Bit, MaybeSerialize, Member};
 
 /// The subset of the `pallet_balances::Trait` that a Runtime can implement.
@@ -31,11 +32,12 @@ pub struct Transfer<T: Balances + System> {
 	#[codec(compact)]
 	pub amount: T::Balance,
 }
-impl<T> super::CallMethod for Transfer<T>
+
+impl<T> super::ModuleCall for Transfer<T>
 where
 	T: Balances + System,
 {
-	fn method(&self) -> &'static str {
+	fn call(&self) -> &'static str {
 		"transfer"
 	}
 	fn pallet(&self) -> &'static str {

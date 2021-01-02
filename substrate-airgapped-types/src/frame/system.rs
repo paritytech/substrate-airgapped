@@ -1,6 +1,6 @@
-use crate::frame::Parameter;
 use codec::{Codec, Decode};
 use core::fmt::Debug;
+use frame_support::Parameter;
 use sp_runtime::traits::AtLeast32Bit;
 
 /// Subset of the `pallet_system::Trait` the Runtime must implement.
@@ -49,5 +49,13 @@ pub trait System {
 	// type AccountId: Parameter + Member + MaybeSerialize + MaybeDisplay + Ord + Default;
 
 	/// The address type. This instead of `<frame_system::Trait::Lookup as StaticLookup>::Source`.
-	type Address: Codec + Clone + PartialEq + Debug + Send + Sync + Eq + Decode;
+	type Address: Codec
+		+ Clone
+		+ PartialEq
+		+ Debug
+		+ Send
+		+ Sync
+		+ Eq
+		+ Decode
+		+ From<Self::AccountId>;
 }
