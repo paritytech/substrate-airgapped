@@ -6,7 +6,7 @@ use sp_runtime::{
 
 use crate::{
 	frame::{balances::Balances, system::System},
-	runtime::Runtime,
+	runtimes::Runtime,
 };
 
 /// Extra type.
@@ -21,7 +21,6 @@ pub type Extra<T> = <<T as Runtime>::Extra as SignedExtra<T>>::Extra;
 ///
 /// This is modified from the substrate version to allow passing in of the version, which is
 /// returned via `additional_signed()`.
-
 /// Ensure the runtime version registered in the transaction is the same as at present.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Debug)]
 pub struct CheckSpecVersion<T: System>(

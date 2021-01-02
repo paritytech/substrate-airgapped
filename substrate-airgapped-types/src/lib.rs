@@ -1,22 +1,20 @@
-//! Substrate Airgapped type/metadata support
+//! Substrate airgapped transaction construction
 #![warn(missing_docs)]
 
 use codec::{Decode, Encode, Input};
 use core::{fmt::Debug, marker::PhantomData};
 
 mod extrinsic;
+mod frame;
 mod metadata;
-mod runtime;
-// mod signed_payload;
-// mod unchecked_extrinsic;
+mod runtimes;
 
 pub use crate::{
-	runtime::PolkadotRuntime,
-	extrinsic::{ TxBuilder, CallIndex}
+	extrinsic::{CallIndex, GenericCall, TxBuilder},
+	frame::{balances, system},
+	metadata::Metadata,
+	runtimes::PolkadotRuntime,
 };
-
-/// Each sub-module correlates directly to a frame pallet
-pub mod frame;
 
 /// Wraps an already encoded byte vector, prevents being encoded as a raw byte vector as part of
 /// the transaction payload

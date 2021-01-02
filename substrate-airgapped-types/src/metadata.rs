@@ -1,7 +1,7 @@
 // use crate::frame::CallMethod;
-use crate::{frame::ModuleCall, extrinsic::CallIndex };
+use crate::{extrinsic::CallIndex, frame::ModuleCall};
 use codec::alloc::collections::HashMap;
-use core::{convert::TryFrom};
+use core::convert::TryFrom;
 
 pub use frame_metadata::{
 	DecodeDifferent, RuntimeMetadata, RuntimeMetadataPrefixed, META_RESERVED,
@@ -24,7 +24,8 @@ impl Metadata {
 	pub fn call_index<C: ModuleCall>(&self, call: C) -> Result<CallIndex, String> {
 		let module_with_calls = self.module_with_calls(call.pallet())?;
 		let module_index = module_with_calls.index;
-		let call_index = module_with_calls.calls.get(call.call()).expect("TODO Could not find call method");
+		let call_index =
+			module_with_calls.calls.get(call.call()).expect("TODO Could not find call method");
 
 		Ok(CallIndex::new(module_index, *call_index))
 	}

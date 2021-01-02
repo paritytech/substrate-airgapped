@@ -1,10 +1,6 @@
 use codec::Encode;
 use hex;
-use substrate_airgapped_types::{
-	extrinsic_builder::{AirCall, CallOptions, ExtrinsicClient},
-	frame::balances::Transfer,
-	PolkadotRuntime,
-};
+use substrate_airgapped_types::{balances::Transfer, CallIndex, PolkadotRuntime, TxBuilder};
 
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
@@ -20,6 +16,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let path_to_genesis = base_path.join("genesis.json");
 	let genesis_hash = rpc_to_bytes(path_to_genesis)?;
 	let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]); // TODO this panics
+
+	type Runtime = PolkadotRuntime;
+	type TransferType = Transfer<Runtime>;
+
+	let alice_addr = AccountKeyring::Alice.to_account_id().into();
+	let bob_addr = AccountKeyring::Bob.to_account_id().into();
+	let transfer_args = Transfer { to: bob_addr, amount: 123_456 };
+	let call_index = CallIndex::new(5, 0);
+
+	let tx_builder: TxBuilder<TransferType, Runtime> =
+		TxBuilder::new(call_index, transfer_args, alice_addr, 0, 4, 26, genesis_hash);
+
+	let tx = tx_builder.unchecked_from_pair(AccountKeyring::Alice.pair())?;
+	println!("tx: {:#?}", tx);
+
+	let tx_encoded = hex::encode(tx.encode());
+	println!("tx encoded: {:#?}", tx_encoded);
 
 	Ok(())
 }
