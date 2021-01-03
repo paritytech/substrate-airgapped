@@ -1,8 +1,9 @@
 use codec::Encode;
-use substrate_airgapped::{CallIndex, GenericCall, KusamaRuntime, TxBuilder, balances::Transfer};
 use sp_runtime::DeserializeOwned;
+use substrate_airgapped::{balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Tx};
 
 // Example only deps - not included in substrate-airgapped
+use hex;
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_version::RuntimeVersion;
@@ -11,7 +12,6 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
-use hex;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let (genesis_hash, version) = gather_inputs()?;
@@ -24,18 +24,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let bob_addr = AccountKeyring::Bob.to_account_id().into();
 	let transfer_args = Transfer { to: bob_addr, amount: 123_456 };
 	let call_index = CallIndex::new(5, 0);
-	let transfer_call = GenericCall {
-		call_index,
-		args: transfer_args
-	};
+	let transfer_call = GenericCall { call_index, args: transfer_args };
 
-	let tx_builder: TxBuilder<TransferType, Runtime> =
-		TxBuilder::new(transfer_call, alice_addr, 0, version.transaction_version, version.spec_version, genesis_hash);
+	let tx: Tx<TransferType, Runtime> = Tx::new(
+		transfer_call,
+		alice_addr,
+		0,
+		version.transaction_version,
+		version.spec_version,
+		genesis_hash,
+	);
 
-	let tx = tx_builder.unchecked_from_pair(AccountKeyring::Alice.pair())?;
-	println!("tx: {:#?}", tx);
+	let signed_tx = tx.tx_from_pair(AccountKeyring::Alice.pair())?;
+	println!("tx: {:#?}", signed_tx);
 
-	let tx_encoded = hex::encode(tx.encode());
+	let tx_encoded = hex::encode(signed_tx.encode());
 	println!("tx encoded: {:#?}", tx_encoded);
 
 	Ok(())
@@ -49,17 +52,17 @@ struct RpcRes<T> {
 }
 
 fn gather_inputs() -> Result<(Vec<u8>, RuntimeVersion), Box<dyn std::error::Error>> {
-    // Path to the directory where the RPC responses resides
-    let base_path =
+	// Path to the directory where the RPC responses resides
+	let base_path =
 		env::current_dir()?.join("substrate-airgapped").join("examples").join("no_meta_transfer");
 
-    let path_to_genesis_hash = base_path.clone().join("genesis.json");
+	let path_to_genesis_hash = base_path.clone().join("genesis.json");
 	let genesis_hash = rpc_to_bytes(path_to_genesis_hash)?;
 
-    let path_to_runtime_version = base_path.join("version.json");
+	let path_to_runtime_version = base_path.join("version.json");
 	let runtime_version = rpc_to::<RuntimeVersion>(path_to_runtime_version)?;
 
-    Ok((genesis_hash, runtime_version))
+	Ok((genesis_hash, runtime_version))
 }
 
 /// Read in a scale encoded hex `result` from the response to a RPC call.
@@ -93,7 +96,7 @@ pub fn rpc_to_bytes(path: PathBuf) -> Result<Vec<u8>, Box<dyn std::error::Error>
 /// ```
 ///
 /// where `result` is a field representing a struct in JSON.
-pub fn rpc_to<T:  DeserializeOwned>(path: PathBuf) -> Result<T, Box<dyn std::error::Error>> {
+pub fn rpc_to<T: DeserializeOwned>(path: PathBuf) -> Result<T, Box<dyn std::error::Error>> {
 	let contents = file_to_string(path)?;
 
 	let rpc_response: RpcRes<T> = serde_json::from_str(&contents)?;

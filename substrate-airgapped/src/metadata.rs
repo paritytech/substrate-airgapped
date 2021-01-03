@@ -1,5 +1,5 @@
 // use crate::frame::CallMethod;
-use crate::{extrinsic::CallIndex, frame::ModuleCall};
+use crate::{frame::ModuleCall, transaction::CallIndex};
 use codec::alloc::collections::HashMap;
 use core::convert::TryFrom;
 
