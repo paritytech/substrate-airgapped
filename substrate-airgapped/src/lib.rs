@@ -1,15 +1,14 @@
 //! Substrate airgapped transaction construction
 #![warn(missing_docs)]
 
-mod extrinsic;
 mod frame;
 mod metadata;
 mod runtimes;
+mod transaction;
 
 pub use crate::{
-	extrinsic::{CallIndex, GenericCall, TxBuilder},
 	frame::{balances, system},
 	metadata::Metadata,
 	runtimes::KusamaRuntime,
+	transaction::{tx_from_parts, CallIndex, GenericCall, SignedPayload, Tx, UncheckedExtrinsic},
 };
-

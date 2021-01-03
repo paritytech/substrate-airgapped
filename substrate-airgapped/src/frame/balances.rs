@@ -1,4 +1,4 @@
-use super::{Parameter, system::System};
+use super::{system::System, Parameter};
 use codec::{Decode, Encode};
 use core::fmt::Debug;
 use sp_runtime::traits::{AtLeast32Bit, MaybeSerialize, Member};

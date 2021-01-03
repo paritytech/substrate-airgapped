@@ -1,6 +1,6 @@
+use super::Parameter;
 use codec::{Codec, Decode};
 use core::fmt::Debug;
-use super::Parameter;
 use sp_runtime::traits::AtLeast32Bit;
 
 /// Subset of the `pallet_system::Trait` the Runtime must implement.

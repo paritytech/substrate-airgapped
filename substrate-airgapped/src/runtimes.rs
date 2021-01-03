@@ -1,6 +1,6 @@
 use crate::{
 	frame::{balances::Balances, system::System},
-	extrinsic::extra::{DefaultExtra, SignedExtra}
+	transaction::extra::{DefaultExtra, SignedExtra},
 };
 use codec::{Decode, Encode};
 use core::fmt::Debug;
