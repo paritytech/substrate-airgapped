@@ -38,25 +38,6 @@ struct ModuleWithCalls {
 	calls: HashMap<String, u8>,
 }
 
-// impl ModuleWithCalls {
-// 	/// TODO comment
-// 	fn encode_call_encoded<C: ModuleCall>(&self, call: C) -> Result<Encoded<C>, String> {
-// 		let bytes = self.encode_call(call)?;
-
-// 		Ok(Encoded::<C>(bytes, PhantomData::<C>))
-// 	}
-
-// 	/// TODO maybe delete this
-// 	fn encode_call<C: ModuleCall>(&self, call: C) -> Result<Vec<u8>, String> {
-// 		let fn_index =
-// 			self.calls.get(call.call()).ok_or(format!("Call not found {}", call.method()))?;
-// 		let mut bytes = vec![self.index, *fn_index];
-// 		bytes.extend(call.encode());
-
-// 		Ok(bytes)
-// 	}
-// }
-
 impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 	type Error = String;
 

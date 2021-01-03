@@ -1,6 +1,6 @@
 use codec::{Codec, Decode};
 use core::fmt::Debug;
-use frame_support::Parameter;
+use super::Parameter;
 use sp_runtime::traits::AtLeast32Bit;
 
 /// Subset of the `pallet_system::Trait` the Runtime must implement.
@@ -19,6 +19,7 @@ pub trait System {
 		+ Copy
 		+ std::hash::Hash
 		+ std::str::FromStr;
+	// not using below because it may make not using sp_runtime easier in the future
 	// + Member
 	// + MaybeMallocSizeOf
 	// + MaybeSerializeDeserialize

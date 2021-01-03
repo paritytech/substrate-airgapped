@@ -1,7 +1,6 @@
-use crate::frame::system::System;
+use super::{Parameter, system::System};
 use codec::{Decode, Encode};
 use core::fmt::Debug;
-use frame_support::Parameter;
 use sp_runtime::traits::{AtLeast32Bit, MaybeSerialize, Member};
 
 /// The subset of the `pallet_balances::Trait` that a Runtime can implement.

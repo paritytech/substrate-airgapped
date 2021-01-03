@@ -1,9 +1,10 @@
 use codec::Encode;
 use hex;
-use substrate_airgapped_types::{CallIndex, GenericCall, PolkadotRuntime, TxBuilder, balances::Transfer};
+use substrate_airgapped::{CallIndex, GenericCall, PolkadotRuntime, TxBuilder, balances::Transfer};
 
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
+use sp_version::RuntimeVersion;
 use std::convert::*;
 use std::env;
 use std::fs::File;
@@ -11,9 +12,9 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let (_, genesis_hash)
+	let (_, genesis_hash, version) = gather_inputs();
 	let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]); // TODO this panics
-	let tx_version = 
+	// let tx_version = 
 
 	type Runtime = PolkadotRuntime;
 	type TransferType = Transfer<Runtime>;
@@ -63,25 +64,6 @@ fn gather_inputs() -> Result<(Vec<u8>, Vec<u8>, RuntimeVersion), Box<dyn std::er
 
     Ok((metadata, genesis_hash, runtime_version))
 }
-
-// /// Read in a scale encoded hex `result` from the response to a RPC call.
-// ///
-// /// The file expected to contain a JSON object with the form:
-// ///
-// /// ```no_run
-// /// {"jsonrpc":"2.0","result":"0xff","id":1}
-// /// ```
-// ///
-// /// where `result` is a field representing scale encoded bytes.
-// pub fn rpc_to_hex(path: PathBuf) -> Result<String, Box<dyn std::error::Error>> {
-// 	let contents = file_to_string(path)?;
-
-// 	let rpc_response: RpcRes<String> = serde_json::from_str(&contents)?;
-// 	// remove `0x` from the hex string.
-// 	let hex = &rpc_response.result[2..];
-
-// 	Ok(hex.to_string())
-// }
 
 /// Read in a scale encoded hex `result` from the response to a RPC call.
 ///
