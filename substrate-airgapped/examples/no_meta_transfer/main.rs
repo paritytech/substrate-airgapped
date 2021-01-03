@@ -1,6 +1,8 @@
 use codec::Encode;
 use sp_runtime::DeserializeOwned;
-use substrate_airgapped::{balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Tx};
+use substrate_airgapped::{
+	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Mortality, Tx,
+};
 
 // Example only deps - not included in substrate-airgapped
 use hex;
@@ -33,9 +35,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		version.transaction_version,
 		version.spec_version,
 		genesis_hash,
+		Mortality::Immortal,
 	);
 
-	let signed_tx = tx.tx_from_pair(AccountKeyring::Alice.pair())?;
+	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair())?;
 	println!("tx: {:#?}", signed_tx);
 
 	let tx_encoded = hex::encode(signed_tx.encode());

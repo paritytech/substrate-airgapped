@@ -8,6 +8,7 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use sp_core::Pair;
+use sp_runtime::generic::Era;
 
 /// Local `UncheckedExtrinsic` convenience type. This is a transaction.
 pub type UncheckedExtrinsic<C, R> = sp_runtime::generic::UncheckedExtrinsic<
@@ -19,6 +20,16 @@ pub type UncheckedExtrinsic<C, R> = sp_runtime::generic::UncheckedExtrinsic<
 
 /// Local `SignedPayload` convenience type. This is the payload that gets signed.
 pub type SignedPayload<C, R> = sp_runtime::generic::SignedPayload<GenericCall<C>, Extra<R>>;
+
+/// Specify the mortality of a transaction.
+///
+/// Read here for conceptual details: https://docs.rs/sp-runtime/2.0.0/sp_runtime/generic/enum.Era.html
+pub enum Mortality<R: System> {
+	/// Specify a mortal transaction with period as well a checkpoint block number and hash
+	Mortal(u64, u64, R::Hash),
+	/// Specify an immortal transaction
+	Immortal,
+}
 
 /// Transaction builder with all the components to create a signing payload.
 pub struct Tx<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
@@ -34,6 +45,8 @@ pub struct Tx<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
 	spec_version: u32,
 	/// Hash of the networks genesis block
 	genesis_hash: R::Hash,
+	/// The mortality of the transaction
+	mortality: Mortality<R>,
 	// TODO tip, era_period, checkpoint_block_hash, checkpoint_block_number
 }
 
@@ -62,12 +75,20 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 		tx_version: u32,
 		spec_version: u32,
 		genesis_hash: R::Hash,
+		mortality: Mortality<R>,
 	) -> Self {
-		Tx { call, address, nonce, tx_version, spec_version, genesis_hash }
+		Tx { call, address, nonce, tx_version, spec_version, genesis_hash, mortality }
 	}
 
 	fn extra(&self) -> <R as Runtime>::Extra {
-		R::Extra::new(self.spec_version, self.tx_version, self.nonce, self.genesis_hash)
+		let era_info = match self.mortality {
+			Mortality::Mortal(period, block_number, block_hash) => {
+				(Era::mortal(period, block_number), Some(block_hash))
+			}
+			Mortality::Immortal => (Era::immortal(), None),
+		};
+
+		R::Extra::new(self.spec_version, self.tx_version, self.nonce, self.genesis_hash, era_info)
 	}
 
 	/// Create a `SignedPayload`, the payload to sign.
@@ -78,7 +99,7 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 	}
 
 	/// Create a signed `UncheckedExtrinsic` (AKA transaction) using the given keyring pair to sign.
-	pub fn tx_from_pair<P>(&self, pair: P) -> Result<UncheckedExtrinsic<C, R>, String>
+	pub fn signed_tx_from_pair<P>(&self, pair: P) -> Result<UncheckedExtrinsic<C, R>, String>
 	where
 		P: Pair,
 		<R as Runtime>::Signature: From<<P as sp_core::Pair>::Signature>,
@@ -112,7 +133,7 @@ mod tests {
 		];
 		let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]);
 		let tx: Tx<TransferType, KusamaRuntime> =
-			Tx::new(transfer_call, alice_addr, 0, 4, 26, genesis_hash);
+			Tx::new(transfer_call, alice_addr, 0, 4, 26, genesis_hash, Mortality::Immortal);
 
 		tx
 	}
@@ -136,16 +157,16 @@ mod tests {
 	fn tx_correctly_constructs_encoded_transaction_from_keyring_pair() {
 		let tx = test_tx_instance();
 
-		let signed_tx = tx.tx_from_pair(AccountKeyring::Alice.pair());
+		let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair());
 		let signed_tx_encoded = signed_tx.encode().to_vec();
 
 		let version_and_address = [
-			0u8, 33, 2, 132, 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214,
-			130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125, 1,
+			0u8, 33, 2, 132, 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159,
+			214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125, 1,
 		];
 		assert_eq!(version_and_address, signed_tx_encoded[0..37]);
 
-		// Sig is variable so we do not assert equivalence
+		// Sig is non-deterministic so we do not assert equivalence
 		let _sig = [
 			236, 253, 48, 98, 178, 30, 37, 245, 91, 58, 158, 88, 180, 224, 236, 97, 249, 154, 143,
 			229, 160, 134, 158, 219, 102, 51, 37, 186, 255, 101, 61, 83, 200, 8, 163, 93, 146, 54,

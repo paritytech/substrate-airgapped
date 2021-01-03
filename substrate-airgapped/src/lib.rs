@@ -10,5 +10,7 @@ pub use crate::{
 	frame::{balances, system},
 	metadata::Metadata,
 	runtimes::KusamaRuntime,
-	transaction::{tx_from_parts, CallIndex, GenericCall, SignedPayload, Tx, UncheckedExtrinsic},
+	transaction::{
+		tx_from_parts, CallIndex, GenericCall, Mortality, SignedPayload, Tx, UncheckedExtrinsic,
+	},
 };
