@@ -7,7 +7,7 @@ This is very much a work in progress is not yet a MVP.
 ## Crates
 
 - substrate-airgapped-cli: CLI that combines all functionality of the available substrate-airgapped libraries.
-- substrate-airgapped-type: Where core components & functionality is being built out
+- substrate-airgapped: Where core components & functionality is being built out
 
 Note: The code here is heavily inspired by [paritytech/substrate-subxt](https://github.com/paritytech/substrate-subxt)
 
@@ -39,7 +39,7 @@ let my_tx_builder:  TxBuilder<PolkadotTransfer> = transfer_method_index::create_
       to,
       amount,
     },
-    accountId,
+    account_id,
     nonce,
     tip,
     era_period,
