@@ -42,8 +42,10 @@ impl CallIndex {
 /// This has the ability to correctly encode and decode itself without metadata.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GenericCall<C: Encode + Decode + Clone> {
-	call_index: CallIndex,
-	args: C,
+	/// `CallIndex`
+	pub call_index: CallIndex,
+	/// Arguments
+	pub args: C,
 }
 
 impl<C: Encode + Decode + Clone> GenericCall<C> {
@@ -109,31 +111,25 @@ pub struct TxBuilder<C: Encode + Decode + Clone, R: System + Balances + Runtime>
 impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> TxBuilder<C, R> {
 	/// Create transaction builder, a struct with all the components to create a signing payload.
 	pub fn new(
-		call_index: CallIndex,
-		args: C,
+		call: GenericCall<C>,
 		address: R::Address,
 		nonce: R::Index,
 		tx_version: u32,
 		spec_version: u32,
 		genesis_hash: R::Hash,
 	) -> Self {
-		TxBuilder {
-			call: GenericCall { call_index, args },
-			address,
-			nonce,
-			tx_version,
-			spec_version,
-			genesis_hash,
-		}
+		TxBuilder { call, address, nonce, tx_version, spec_version, genesis_hash }
 	}
 
 	fn extra(&self) -> <R as Runtime>::Extra {
 		R::Extra::new(self.spec_version, self.tx_version, self.nonce, self.genesis_hash)
 	}
 
-	pub fn signed_payload(&self) -> Result<SingedPayload<C, R>, String> {
+	/// Returns `SignedPayload`, the payload to sign.
+	pub fn signed_payload(&self) -> SignedPayload<C, R> {
 		let extra = self.extra();
 		SignedPayload::<C, R>::new(self.call.clone(), extra.extra())
+			.expect("TODO signed payload constructs")
 	}
 
 	/// Create an unchecked extrinsic signed with the given pair
@@ -142,9 +138,7 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> TxBuilder<C, R>
 		P: Pair,
 		<R as Runtime>::Signature: From<<P as sp_core::Pair>::Signature>,
 	{
-		let extra: R::Extra = self.extra();
-		let payload = SignedPayload::<C, R>::new(self.call.clone(), extra.extra())
-			.expect("TODO failed to create signing payload");
+		let payload = self.signed_payload();
 		let signature = payload.using_encoded(|payload| pair.sign(payload));
 		let (call, extra, _) = payload.deconstruct();
 		let unchecked = UncheckedExtrinsic::<C, R>::new_signed(
@@ -177,8 +171,11 @@ mod tests {
 		assert_eq!(
 			transfer.args_encoded(),
 			[
-				142, 175, 4, 21, 22, 135, 115, 99, 38, 201, 254, 161, 126, 37, 252, 82, 135, 97,
-				54, 147, 201, 18, 144, 156, 178, 38, 170, 71, 148, 242, 106, 72, 48
+				255, 142, 175,   4,  21,  22, 135, 115,
+				99,  38, 201, 254, 161, 126,  37, 252,
+				82, 135,  97,  54, 147, 201,  18, 144,
+				156, 178,  38, 170,  71, 148, 242, 106,
+				72,  48
 			]
 		);
 
@@ -189,5 +186,36 @@ mod tests {
 		assert_eq!(transfer.encode(), call_encoded_expected);
 		// let decoded_call = Transfer::<PolkadotRuntime>::decode(&mut &call_encoded_expected);
 		// assert_eq!(decoded_call, transfer);
+	}
+
+	#[test]
+	fn signed_payload_encodes() {
+		let bob_addr = AccountKeyring::Bob.to_account_id().into();
+		let alice_addr: <PolkadotRuntime as System>::Address = AccountKeyring::Alice.to_account_id().into();
+		println!("alice {}", alice_addr);
+		let transfer_args: Transfer<PolkadotRuntime> = Transfer { to: bob_addr, amount: 12 };
+		let transfer = GenericCall {
+			call_index: CallIndex { module_index: 5, call_index: 0 },
+			args: transfer_args,
+		};
+		let genesis_hash = [
+			221, 185, 147, 77, 30, 241, 157, 155, 28, 177, 225, 8, 87, 182, 228, 162, 79, 230, 196,
+			149, 215, 168, 99, 34, 136, 35, 92, 20, 18, 83, 139, 132,
+		];
+		let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]);
+		let tx_builder: TxBuilder<Transfer<PolkadotRuntime>, PolkadotRuntime> =
+			TxBuilder::new(transfer, alice_addr, 0, 4, 26, genesis_hash);
+
+		let signed_payload_encoded_expected = [
+			/// CallIndex + Args
+			5, 0, 255, 142, 175, 4, 21, 22, 135, 115, 99, 38, 201, 254, 161, 126, 37, 252, 82, 135,
+			97, 54, 147, 201, 18, 144, 156, 178, 38, 170, 71, 148, 242, 106, 72, 48, 101, 1, 0, 0,
+			26, 0, 0, 0, 5, 0, 0, 0, 221, 185, 147, 77, 30, 241, 157, 155, 28, 177, 225, 8, 87,
+			182, 228, 162, 79, 230, 196, 149, 215, 168, 99, 34, 136, 35, 92, 20, 18, 83, 139, 132,
+			225, 64, 130, 68, 166, 222, 158, 234, 239, 194, 156, 28, 250, 111, 112, 177, 208, 79,
+			137, 252, 126, 151, 25, 124, 104, 147, 234, 164, 185, 169, 226, 92,
+		];
+
+		assert_eq!(signed_payload_encoded_expected.to_vec(), tx_builder.signed_payload().encode())
 	}
 }
