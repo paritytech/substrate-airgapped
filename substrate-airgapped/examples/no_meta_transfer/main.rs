@@ -1,7 +1,8 @@
 use codec::Encode;
-use hex;
-use substrate_airgapped::{CallIndex, GenericCall, PolkadotRuntime, TxBuilder, balances::Transfer};
+use substrate_airgapped::{CallIndex, GenericCall, KusamaRuntime, TxBuilder, balances::Transfer};
+use sp_runtime::DeserializeOwned;
 
+// Example only deps - not included in substrate-airgapped
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_version::RuntimeVersion;
@@ -10,13 +11,13 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
+use hex;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let (_, genesis_hash, version) = gather_inputs();
+	let (genesis_hash, version) = gather_inputs()?;
 	let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]); // TODO this panics
-	// let tx_version = 
 
-	type Runtime = PolkadotRuntime;
+	type Runtime = KusamaRuntime;
 	type TransferType = Transfer<Runtime>;
 
 	let alice_addr = AccountKeyring::Alice.to_account_id().into();
@@ -29,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	};
 
 	let tx_builder: TxBuilder<TransferType, Runtime> =
-		TxBuilder::new(transfer_call, alice_addr, 0, 5, 26, genesis_hash);
+		TxBuilder::new(transfer_call, alice_addr, 0, version.transaction_version, version.spec_version, genesis_hash);
 
 	let tx = tx_builder.unchecked_from_pair(AccountKeyring::Alice.pair())?;
 	println!("tx: {:#?}", tx);
@@ -47,22 +48,18 @@ struct RpcRes<T> {
 	result: T,
 }
 
-fn gather_inputs() -> Result<(Vec<u8>, Vec<u8>, RuntimeVersion), Box<dyn std::error::Error>> {
-    // Path to the directory where the RPC responses reside
+fn gather_inputs() -> Result<(Vec<u8>, RuntimeVersion), Box<dyn std::error::Error>> {
+    // Path to the directory where the RPC responses resides
     let base_path =
-		env::current_dir()?.join("substrate-airgapped-types").join("examples").join("submit");
+		env::current_dir()?.join("substrate-airgapped").join("examples").join("no_meta_transfer");
 
-    let path_to_metadata = base_path.clone().join("metadata.json");
-    let metadata = util::rpc_to_bytes(path_to_metadata)?;
+    let path_to_genesis_hash = base_path.clone().join("genesis.json");
+	let genesis_hash = rpc_to_bytes(path_to_genesis_hash)?;
 
-    let path_to_genesis_hash = base_path.clone().join("genesis_hash.json");
-    let genesis_hash = util::rpc_to_bytes(path_to_genesis_hash)?;
+    let path_to_runtime_version = base_path.join("version.json");
+	let runtime_version = rpc_to::<RuntimeVersion>(path_to_runtime_version)?;
 
-    let path_to_runtime_version = base_path.clone().join("version.json");
-    let runtime_version = util::rpc_to_runtime_version(path_to_runtime_version)?;
-
-
-    Ok((metadata, genesis_hash, runtime_version))
+    Ok((genesis_hash, runtime_version))
 }
 
 /// Read in a scale encoded hex `result` from the response to a RPC call.
@@ -83,6 +80,25 @@ pub fn rpc_to_bytes(path: PathBuf) -> Result<Vec<u8>, Box<dyn std::error::Error>
 	let bytes = hex::decode(hex)?;
 
 	Ok(bytes)
+}
+
+/// Deserialize a struct from the `result` in a JSON response to the
+/// RPC `system_properties`. (Relevant structs to deserialize include
+/// `SystemProperties` and `RuntimeVersion`.)
+///
+/// The file expected to contain a JSON object with the form:
+///
+/// ```no_run
+/// {"jsonrpc":"2.0","result":"...","id":1}
+/// ```
+///
+/// where `result` is a field representing a struct in JSON.
+pub fn rpc_to<T:  DeserializeOwned>(path: PathBuf) -> Result<T, Box<dyn std::error::Error>> {
+	let contents = file_to_string(path)?;
+
+	let rpc_response: RpcRes<T> = serde_json::from_str(&contents)?;
+
+	Ok(rpc_response.result)
 }
 
 /// Read a file to a string (non-buffered).

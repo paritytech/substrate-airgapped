@@ -15,11 +15,10 @@ sp-runtime = { version = "2.0.0", package = "sp-runtime" }
 sp-core = { version = "2.0.0" }
 frame-metadata = { version = "12", package = "frame-metadata" }
 
-# Used by substrate
-hex = { version = "0.4.2" }
-
 [dev-dependencies]
 # Currently these are just to get the example going
 sp-keyring = { version = "2.0.0", package = "sp-keyring" }
+sp-version = { version = "2.0.0", package = "sp-version" }
 serde = { version = "1.0.115", features = ["derive"] }
 serde_json = "1.0.57"
+hex = { version = "0.4.2" }

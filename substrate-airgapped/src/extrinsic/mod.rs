@@ -9,7 +9,7 @@ use sp_core::Pair;
 
 pub(crate) mod extra;
 
-/// Method with the method and module index
+/// Call arguments with the call and module index. The indexes are needed encoding.
 #[derive(Clone, Copy, Debug, PartialEq, Encode, Decode)]
 pub struct CallIndex {
 	module_index: u8,
@@ -18,21 +18,21 @@ pub struct CallIndex {
 
 impl CallIndex {
 	/// Get `module`, the index of the module the call is in
-	// pub fn module_index(&self) -> u8 {
-	// 	self.module_index
-	// }
+	pub fn module_index(&self) -> u8 {
+		self.module_index
+	}
 
 	/// Get `call_index`, the index of the call in the module
-	// pub fn call_index(&self) -> u8 {
-	// 	self.call_index
-	// }
+	pub fn call_index(&self) -> u8 {
+		self.call_index
+	}
 
 	/// Create `CallIndex`
 	pub fn new(module_index: u8, call_index: u8) -> CallIndex {
 		CallIndex { module_index, call_index }
 	}
 
-	/// Create a slice representing the call index
+	/// Create a vec representing the call index
 	pub fn to_vec(self) -> Vec<u8> {
 		vec![self.module_index, self.call_index]
 	}
@@ -46,16 +46,6 @@ pub struct GenericCall<C: Encode + Decode + Clone> {
 	pub call_index: CallIndex,
 	/// Arguments
 	pub args: C,
-}
-
-impl<C: Encode + Decode + Clone> GenericCall<C> {
-	fn args_encoded(&self) -> Vec<u8> {
-		self.args.encode()
-	}
-
-	fn call_index_encoded(&self) -> Vec<u8> {
-		self.call_index.to_vec()
-	}
 }
 
 impl<C: Encode + Decode + Clone> Encode for GenericCall<C> {
