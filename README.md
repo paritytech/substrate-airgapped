@@ -2,8 +2,6 @@
 
 Tools to facilitate an air-gapped construction, decoding, and signing flow for transactions of `FRAME`-based chains.
 
-This is very much a work in progress is not yet a MVP.
-
 ## Crates
 
 - substrate-airgapped-cli: CLI that combines all functionality of the available substrate-airgapped libraries.
