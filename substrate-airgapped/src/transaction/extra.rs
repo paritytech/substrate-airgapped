@@ -190,7 +190,13 @@ pub trait SignedExtra<T: System>: SignedExtension {
 	type Extra: SignedExtension + Send + Sync;
 
 	/// Creates a new `SignedExtra`.
-	fn new(spec_version: u32, tx_version: u32, nonce: T::Index, genesis_hash: T::Hash) -> Self;
+	fn new(
+		spec_version: u32,
+		tx_version: u32,
+		nonce: T::Index,
+		genesis_hash: T::Hash,
+		era_info: (Era, Option<T::Hash>),
+	) -> Self;
 
 	/// Returns the transaction extra.
 	fn extra(&self) -> Self::Extra;
@@ -203,6 +209,7 @@ pub struct DefaultExtra<T: System> {
 	tx_version: u32,
 	nonce: T::Index,
 	genesis_hash: T::Hash,
+	era_info: (Era, Option<T::Hash>),
 }
 
 impl<T: System + Balances + Clone + Debug + Eq + Send + Sync> SignedExtra<T> for DefaultExtra<T> {
@@ -216,16 +223,23 @@ impl<T: System + Balances + Clone + Debug + Eq + Send + Sync> SignedExtra<T> for
 		ChargeTransactionPayment<T>,
 	);
 
-	fn new(spec_version: u32, tx_version: u32, nonce: T::Index, genesis_hash: T::Hash) -> Self {
-		DefaultExtra { spec_version, tx_version, nonce, genesis_hash }
+	fn new(
+		spec_version: u32,
+		tx_version: u32,
+		nonce: T::Index,
+		genesis_hash: T::Hash,
+		era_info: (Era, Option<T::Hash>),
+	) -> Self {
+		DefaultExtra { spec_version, tx_version, nonce, genesis_hash, era_info }
 	}
 
 	fn extra(&self) -> Self::Extra {
+		let era_hash = if let Some(hash) = self.era_info.1 { hash } else { self.genesis_hash };
 		(
 			CheckSpecVersion(PhantomData, self.spec_version),
 			CheckTxVersion(PhantomData, self.tx_version),
 			CheckGenesis(PhantomData, self.genesis_hash),
-			CheckEra((Era::Immortal, PhantomData), self.genesis_hash),
+			CheckEra((self.era_info.0, PhantomData), era_hash),
 			CheckNonce(self.nonce),
 			CheckWeight(PhantomData),
 			ChargeTransactionPayment(<T as Balances>::Balance::default()),
