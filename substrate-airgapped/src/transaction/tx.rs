@@ -21,54 +21,69 @@ pub type UncheckedExtrinsic<C, R> = sp_runtime::generic::UncheckedExtrinsic<
 /// Local `SignedPayload` convenience type. This is the payload that gets signed.
 pub type SignedPayload<C, R> = sp_runtime::generic::SignedPayload<GenericCall<C>, Extra<R>>;
 
+/// Mortal period configuration options,
+///
+/// Read here for conceptual details: https://docs.rs/sp-runtime/2.0.0/sp_runtime/generic/enum.Era.html
+#[derive(Clone, Eq, PartialEq, Debug, Copy)]
+pub struct MortalConfig<R: System> {
+	/// Duration of the transactions validity, measured in blocks, starting from the checkpoint block.
+	pub period: u64,
+	/// Block number where the transaction mortality period starts.
+	pub checkpoint_block_number: u64,
+	/// Hash of the block where the transaction's mortality period starts.
+	pub checkpoint_block_hash: R::Hash,
+}
 /// Specify the mortality of a transaction.
 ///
 /// Read here for conceptual details: https://docs.rs/sp-runtime/2.0.0/sp_runtime/generic/enum.Era.html
+#[derive(Clone, Eq, PartialEq, Debug, Copy)]
 pub enum Mortality<R: System> {
 	/// Specify a mortal transaction with period, checkpoint block number, and
 	/// checkpoint block hash
-	Mortal(u64, u64, R::Hash),
+	Mortal(MortalConfig<R>),
 	/// Specify an immortal transaction
 	Immortal,
 }
 
 /// Configuration options for a Tx
+#[derive(Clone, PartialEq, Debug)]
 pub struct TxConfig<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
-	/// Call with all info for encoding and decoding
+	/// Call with all info for encoding and decoding.
 	pub call: GenericCall<C>,
-	/// Signers Address
+	/// Signers Address.
 	pub address: R::Address,
-	/// Signers nonce
+	/// Signers nonce.
 	pub nonce: R::Index,
-	/// Transaction version associated with the runtime
+	/// Transaction version associated with the runtime.
 	pub tx_version: u32,
-	/// API specification version of the runtime
+	/// API specification version of the runtime.
 	pub spec_version: u32,
-	/// Hash of the networks genesis block
+	/// Hash of the networks genesis block.
 	pub genesis_hash: R::Hash,
-	/// The mortality of the transaction
+	/// The mortality of the transaction.
 	pub mortality: Mortality<R>,
-	/// Tip, used for transaction priority
+	/// Tip, used for transaction priority.
 	pub tip: R::Balance,
 }
 
 /// Transaction builder with all the components to create a signing payload.
+#[derive(Clone, PartialEq, Debug)]
 pub struct Tx<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
-	/// Call with all info for encoding and decoding
+	/// Call with all info for encoding and decoding.
 	call: GenericCall<C>,
-	/// Signers Address
+	/// Signers Address.
 	address: R::Address,
-	/// Signers nonce
+	/// Signers nonce.
 	nonce: R::Index,
-	/// Transaction version associated with the runtime
+	/// Transaction version associated with the runtime.
 	tx_version: u32,
-	/// API specification version of the runtime
+	/// API specification version of the runtime.
 	spec_version: u32,
-	/// Hash of the networks genesis block
+	/// Hash of the networks genesis block.
 	genesis_hash: R::Hash,
-	/// The mortality of the transaction
+	/// The mortality of the transaction.
 	mortality: Mortality<R>,
-	/// Tip, used for transaction priority
+	/// Tip, used for transaction priority.
 	tip: R::Balance,
 }
 
@@ -103,7 +118,7 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 		Tx { call, address, nonce, tx_version, spec_version, genesis_hash, mortality, tip }
 	}
 
-	/// Create a transaction builder from config
+	/// Create a transaction builder from TxConfig
 	pub fn from_config(config: TxConfig<C, R>) -> Self {
 		Tx {
 			call: config.call,
@@ -159,10 +174,11 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 	}
 
 	fn extra(&self) -> <R as Runtime>::Extra {
-		let era_info = match self.mortality {
-			Mortality::Mortal(period, block_number, block_hash) => {
-				(Era::mortal(period, block_number), Some(block_hash))
-			}
+		let era_info = match &self.mortality {
+			Mortality::Mortal(config) => (
+				Era::mortal(config.period, config.checkpoint_block_number),
+				Some(config.checkpoint_block_hash),
+			),
 			Mortality::Immortal => (Era::immortal(), None),
 		};
 

@@ -2,7 +2,8 @@ use codec::Encode;
 use sp_core::H256;
 use sp_runtime::{generic::Header, traits::BlakeTwo256, DeserializeOwned};
 use substrate_airgapped::{
-	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Mortality, Tx, TxConfig
+	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, MortalConfig, Mortality, Tx,
+	TxConfig,
 };
 
 // Example deps
@@ -49,7 +50,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		tx_version: runtime_version.transaction_version,
 		spec_version: runtime_version.spec_version,
 		genesis_hash: genesis_hash,
-		mortality: Mortality::Mortal(64, header.number as u64, block_hash),
+		mortality: Mortality::Mortal(MortalConfig {
+			period: 64,
+			checkpoint_block_number: header.number as u64,
+			checkpoint_block_hash: block_hash,
+		}),
 		tip: 100,
 	});
 

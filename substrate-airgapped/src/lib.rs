@@ -11,7 +11,7 @@ pub use crate::{
 	metadata::Metadata,
 	runtimes::KusamaRuntime,
 	transaction::{
-		tx_from_parts, CallIndex, GenericCall, Mortality, SignedPayload, Tx, TxConfig,
-		UncheckedExtrinsic,
+		tx_from_parts, CallIndex, GenericCall, MortalConfig, Mortality, SignedPayload, Tx,
+		TxConfig, UncheckedExtrinsic,
 	},
 };
