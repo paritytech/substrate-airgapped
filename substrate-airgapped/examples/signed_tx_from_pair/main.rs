@@ -1,9 +1,9 @@
 use codec::Encode;
-use sp_runtime::{ generic::Header, DeserializeOwned, traits::BlakeTwo256};
+use sp_core::H256;
+use sp_runtime::{generic::Header, traits::BlakeTwo256, DeserializeOwned};
 use substrate_airgapped::{
 	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Mortality, Tx,
 };
-use sp_core::H256;
 
 // Example deps
 use hex;
@@ -19,12 +19,18 @@ use std::path::PathBuf;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// Get the latest block hash and then make all non historic queries at that block.
 	let block_hash = rpc_to_local_node::<(), String>("chain_getBlockHash", vec![])?.result;
-	let runtime_version = rpc_to_local_node::<String, RuntimeVersion>("chain_getRuntimeVersion", vec![block_hash.clone()])?
-		.result;
-	let header = rpc_to_local_node::<String, Header<u32, BlakeTwo256>>("chain_getHeader", vec![block_hash.clone()])?.result;
-	let genesis_hash =
-		rpc_to_local_node::<usize, String>("chain_getBlockHash", vec![0])
-			.and_then(|rpc_res| Ok(string_to_h256(&rpc_res.result)))?;
+	let runtime_version = rpc_to_local_node::<String, RuntimeVersion>(
+		"chain_getRuntimeVersion",
+		vec![block_hash.clone()],
+	)?
+	.result;
+	let header = rpc_to_local_node::<String, Header<u32, BlakeTwo256>>(
+		"chain_getHeader",
+		vec![block_hash.clone()],
+	)?
+	.result;
+	let genesis_hash = rpc_to_local_node::<usize, String>("chain_getBlockHash", vec![0])
+		.and_then(|rpc_res| Ok(string_to_h256(&rpc_res.result)))?;
 	let block_hash = string_to_h256(&block_hash[..]);
 
 	type Runtime = KusamaRuntime;
@@ -44,6 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		runtime_version.spec_version,
 		genesis_hash,
 		Mortality::Mortal(64, header.number as u64, block_hash),
+		100,
 	);
 
 	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair())?;

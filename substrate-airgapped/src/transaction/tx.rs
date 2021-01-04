@@ -25,10 +25,30 @@ pub type SignedPayload<C, R> = sp_runtime::generic::SignedPayload<GenericCall<C>
 ///
 /// Read here for conceptual details: https://docs.rs/sp-runtime/2.0.0/sp_runtime/generic/enum.Era.html
 pub enum Mortality<R: System> {
-	/// Specify a mortal transaction with period as well a checkpoint block number and hash
+	/// Specify a mortal transaction with period, checkpoint block number, and
+	/// checkpoint block hash
 	Mortal(u64, u64, R::Hash),
 	/// Specify an immortal transaction
 	Immortal,
+}
+
+pub struct TxConfig<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
+	/// Call with all info for encoding and decoding
+	pub call: GenericCall<C>,
+	/// Signers Address
+	pub address: R::Address,
+	/// Signers nonce
+	pub nonce: R::Index,
+	/// Transaction version associated with the runtime
+	pub tx_version: u32,
+	/// API specification version of the runtime
+	pub spec_version: u32,
+	/// Hash of the networks genesis block
+	pub genesis_hash: R::Hash,
+	/// The mortality of the transaction
+	pub mortality: Mortality<R>,
+	/// Tip, used for transaction priority
+	pub tip: R::Balance,
 }
 
 /// Transaction builder with all the components to create a signing payload.
@@ -47,7 +67,8 @@ pub struct Tx<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
 	genesis_hash: R::Hash,
 	/// The mortality of the transaction
 	mortality: Mortality<R>,
-	// TODO tip, era_period, checkpoint_block_hash, checkpoint_block_number
+	/// Tip, used for transaction priority
+	tip: R::Balance,
 }
 
 /// Create a tx from the senders address, a `SignedPayload` and the signature.
@@ -67,7 +88,7 @@ where
 }
 
 impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
-	/// Create transaction builder, a struct with all the components to create a signing payload.
+	/// Create transaction builder
 	pub fn new(
 		call: GenericCall<C>,
 		address: R::Address,
@@ -76,8 +97,64 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 		spec_version: u32,
 		genesis_hash: R::Hash,
 		mortality: Mortality<R>,
+		tip: R::Balance,
 	) -> Self {
-		Tx { call, address, nonce, tx_version, spec_version, genesis_hash, mortality }
+		Tx { call, address, nonce, tx_version, spec_version, genesis_hash, mortality, tip }
+	}
+
+	/// Create a transaction builder from config
+	pub fn from_config(config: TxConfig<C, R>) -> Self {
+		Tx {
+			call: config.call,
+			address: config.address,
+			nonce: config.nonce,
+			tx_version: config.tx_version,
+			spec_version: config.spec_version,
+			genesis_hash: config.genesis_hash,
+			mortality: config.mortality,
+			tip: config.tip,
+		}
+	}
+
+	/// Transaction's call, including arguments and call index.
+	pub fn call(&self) -> &GenericCall<C> {
+		&self.call
+	}
+
+	/// Address of the transaction's signer.
+	pub fn address(&self) -> &R::Address {
+		&self.address
+	}
+
+	/// Nonce of the signer.
+	pub fn nonce(&self) -> &R::Index {
+		&self.nonce
+	}
+
+	/// Transaction version associated with the runtime.
+	pub fn tx_version(&self) -> &u32 {
+		&self.tx_version
+	}
+
+	/// Api specification version of the runtime.
+	pub fn spec_version(&self) -> &u32 {
+		&self.spec_version
+	}
+
+	/// Hash of the networks genesis block.
+	pub fn genesis_hash(&self) -> &R::Hash {
+		&self.genesis_hash
+	}
+
+	/// Mortality of the transaction, including mortal period, checkpoint block
+	/// number, and checkpoint block hash.
+	pub fn mortality(&self) -> &Mortality<R> {
+		&self.mortality
+	}
+
+	/// Tip, used to determine transaction priority.
+	pub fn tip(&self) -> &R::Balance {
+		&self.tip
 	}
 
 	fn extra(&self) -> <R as Runtime>::Extra {
@@ -88,7 +165,14 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 			Mortality::Immortal => (Era::immortal(), None),
 		};
 
-		R::Extra::new(self.spec_version, self.tx_version, self.nonce, self.genesis_hash, era_info)
+		R::Extra::new(
+			self.spec_version,
+			self.tx_version,
+			self.nonce,
+			self.genesis_hash,
+			era_info,
+			self.tip,
+		)
 	}
 
 	/// Create a `SignedPayload`, the payload to sign.
@@ -134,7 +218,7 @@ mod tests {
 		];
 		let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]);
 		let tx: Tx<TransferType, KusamaRuntime> =
-			Tx::new(transfer_call, alice_addr, 0, 4, 26, genesis_hash, Mortality::Immortal);
+			Tx::new(transfer_call, alice_addr, 0, 4, 26, genesis_hash, Mortality::Immortal, 0);
 
 		tx
 	}
@@ -183,5 +267,17 @@ mod tests {
 			54, 147, 201, 18, 144, 156, 178, 38, 170, 71, 148, 242, 106, 72, 48,
 		];
 		assert_eq!(call, signed_tx_encoded[104..]);
+	}
+
+	#[test]
+	fn tx_attribute_getters_work() {
+		let tx = test_tx_instance();
+
+		let transfer_args: TransferType = Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 12 };
+		let transfer_call = GenericCall { call_index: CallIndex::new(5, 0), args: transfer_args };
+		assert_eq!(tx.call(), &transfer_call);
+		assert_eq!(tx.address(), &AccountKeyring::Alice.to_account_id());
+
+
 	}
 }
