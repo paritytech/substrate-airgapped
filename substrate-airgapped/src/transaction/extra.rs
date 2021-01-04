@@ -185,7 +185,7 @@ where
 }
 
 /// Trait for implementing transaction extras for a runtime.
-pub trait SignedExtra<T: System>: SignedExtension {
+pub trait SignedExtra<T: System + Balances>: SignedExtension {
 	/// The type the extras.
 	type Extra: SignedExtension + Send + Sync;
 
@@ -196,6 +196,7 @@ pub trait SignedExtra<T: System>: SignedExtension {
 		nonce: T::Index,
 		genesis_hash: T::Hash,
 		era_info: (Era, Option<T::Hash>),
+		tip: T::Balance,
 	) -> Self;
 
 	/// Returns the transaction extra.
@@ -204,12 +205,13 @@ pub trait SignedExtra<T: System>: SignedExtension {
 
 /// Default `SignedExtra` for substrate runtimes.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, Debug)]
-pub struct DefaultExtra<T: System> {
+pub struct DefaultExtra<T: System + Balances> {
 	spec_version: u32,
 	tx_version: u32,
 	nonce: T::Index,
 	genesis_hash: T::Hash,
 	era_info: (Era, Option<T::Hash>),
+	tip: T::Balance,
 }
 
 impl<T: System + Balances + Clone + Debug + Eq + Send + Sync> SignedExtra<T> for DefaultExtra<T> {
@@ -229,8 +231,9 @@ impl<T: System + Balances + Clone + Debug + Eq + Send + Sync> SignedExtra<T> for
 		nonce: T::Index,
 		genesis_hash: T::Hash,
 		era_info: (Era, Option<T::Hash>),
+		tip: T::Balance,
 	) -> Self {
-		DefaultExtra { spec_version, tx_version, nonce, genesis_hash, era_info }
+		DefaultExtra { spec_version, tx_version, nonce, genesis_hash, era_info, tip }
 	}
 
 	fn extra(&self) -> Self::Extra {
@@ -242,7 +245,7 @@ impl<T: System + Balances + Clone + Debug + Eq + Send + Sync> SignedExtra<T> for
 			CheckEra((self.era_info.0, PhantomData), era_hash),
 			CheckNonce(self.nonce),
 			CheckWeight(PhantomData),
-			ChargeTransactionPayment(<T as Balances>::Balance::default()),
+			ChargeTransactionPayment(self.tip),
 		)
 	}
 }

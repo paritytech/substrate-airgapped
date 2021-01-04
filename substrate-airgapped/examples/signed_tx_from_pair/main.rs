@@ -1,9 +1,10 @@
 use codec::Encode;
-use sp_runtime::{ generic::Header, DeserializeOwned, traits::BlakeTwo256};
-use substrate_airgapped::{
-	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Mortality, Tx,
-};
 use sp_core::H256;
+use sp_runtime::{generic::Header, traits::BlakeTwo256, DeserializeOwned};
+use substrate_airgapped::{
+	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, MortalConfig, Mortality, Tx,
+	TxConfig,
+};
 
 // Example deps
 use hex;
@@ -19,12 +20,18 @@ use std::path::PathBuf;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// Get the latest block hash and then make all non historic queries at that block.
 	let block_hash = rpc_to_local_node::<(), String>("chain_getBlockHash", vec![])?.result;
-	let runtime_version = rpc_to_local_node::<String, RuntimeVersion>("chain_getRuntimeVersion", vec![block_hash.clone()])?
-		.result;
-	let header = rpc_to_local_node::<String, Header<u32, BlakeTwo256>>("chain_getHeader", vec![block_hash.clone()])?.result;
-	let genesis_hash =
-		rpc_to_local_node::<usize, String>("chain_getBlockHash", vec![0])
-			.and_then(|rpc_res| Ok(string_to_h256(&rpc_res.result)))?;
+	let runtime_version = rpc_to_local_node::<String, RuntimeVersion>(
+		"chain_getRuntimeVersion",
+		vec![block_hash.clone()],
+	)?
+	.result;
+	let header = rpc_to_local_node::<String, Header<u32, BlakeTwo256>>(
+		"chain_getHeader",
+		vec![block_hash.clone()],
+	)?
+	.result;
+	let genesis_hash = rpc_to_local_node::<usize, String>("chain_getBlockHash", vec![0])
+		.and_then(|rpc_res| Ok(string_to_h256(&rpc_res.result)))?;
 	let block_hash = string_to_h256(&block_hash[..]);
 
 	type Runtime = KusamaRuntime;
@@ -36,21 +43,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let call_index = CallIndex::new(5, 0);
 	let transfer_call = GenericCall { call_index, args: transfer_args };
 
-	let tx: Tx<TransferType, Runtime> = Tx::new(
-		transfer_call,
-		alice_addr,
-		2,
-		runtime_version.transaction_version,
-		runtime_version.spec_version,
-		genesis_hash,
-		Mortality::Mortal(64, header.number as u64, block_hash),
-	);
+	let tx: Tx<TransferType, Runtime> = Tx::from_config(TxConfig {
+		call: transfer_call,
+		address: alice_addr,
+		nonce: 0,
+		tx_version: runtime_version.transaction_version,
+		spec_version: runtime_version.spec_version,
+		genesis_hash: genesis_hash,
+		mortality: Mortality::Mortal(MortalConfig {
+			period: 64,
+			checkpoint_block_number: header.number as u64,
+			checkpoint_block_hash: block_hash,
+		}),
+		tip: 100,
+	});
 
 	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair())?;
-	println!("tx: {:#?}", signed_tx);
+	println!("Tx (UncheckedExtrinsic): {:#?}\n", signed_tx);
 
 	let tx_encoded = hex::encode(signed_tx.encode());
-	println!("tx encoded: {:#?}", tx_encoded);
+	println!("Submit this: {:#?}", tx_encoded);
 
 	Ok(())
 }

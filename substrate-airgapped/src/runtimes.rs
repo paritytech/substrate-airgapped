@@ -10,7 +10,7 @@ use sp_runtime::{
 };
 
 /// Trait to encompassing types from a runtime and its pallets.
-pub trait Runtime: System + Sized + Send + Sync + 'static {
+pub trait Runtime: System + Balances + Sized + Send + Sync + 'static {
 	/// Signature type
 	type Signature: Verify + Encode + Debug + Decode + Eq + Send + Sync + Clone + 'static;
 	/// Transaction extras
