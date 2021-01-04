@@ -2,7 +2,7 @@ use codec::Encode;
 use sp_core::H256;
 use sp_runtime::{generic::Header, traits::BlakeTwo256, DeserializeOwned};
 use substrate_airgapped::{
-	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Mortality, Tx,
+	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Mortality, Tx, TxConfig
 };
 
 // Example deps
@@ -42,22 +42,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let call_index = CallIndex::new(5, 0);
 	let transfer_call = GenericCall { call_index, args: transfer_args };
 
-	let tx: Tx<TransferType, Runtime> = Tx::new(
-		transfer_call,
-		alice_addr,
-		2,
-		runtime_version.transaction_version,
-		runtime_version.spec_version,
-		genesis_hash,
-		Mortality::Mortal(64, header.number as u64, block_hash),
-		100,
-	);
+	let tx: Tx<TransferType, Runtime> = Tx::from_config(TxConfig {
+		call: transfer_call,
+		address: alice_addr,
+		nonce: 0,
+		tx_version: runtime_version.transaction_version,
+		spec_version: runtime_version.spec_version,
+		genesis_hash: genesis_hash,
+		mortality: Mortality::Mortal(64, header.number as u64, block_hash),
+		tip: 100,
+	});
 
 	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair())?;
-	println!("tx: {:#?}", signed_tx);
+	println!("Tx (UncheckedExtrinsic): {:#?}\n", signed_tx);
 
 	let tx_encoded = hex::encode(signed_tx.encode());
-	println!("tx encoded: {:#?}", tx_encoded);
+	println!("Submit this: {:#?}", tx_encoded);
 
 	Ok(())
 }

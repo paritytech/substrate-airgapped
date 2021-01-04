@@ -32,6 +32,7 @@ pub enum Mortality<R: System> {
 	Immortal,
 }
 
+/// Configuration options for a Tx
 pub struct TxConfig<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
 	/// Call with all info for encoding and decoding
 	pub call: GenericCall<C>,
@@ -273,11 +274,10 @@ mod tests {
 	fn tx_attribute_getters_work() {
 		let tx = test_tx_instance();
 
-		let transfer_args: TransferType = Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 12 };
+		let transfer_args: TransferType =
+			Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 12 };
 		let transfer_call = GenericCall { call_index: CallIndex::new(5, 0), args: transfer_args };
 		assert_eq!(tx.call(), &transfer_call);
 		assert_eq!(tx.address(), &AccountKeyring::Alice.to_account_id());
-
-
 	}
 }
