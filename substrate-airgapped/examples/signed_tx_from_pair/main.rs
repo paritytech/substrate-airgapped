@@ -1,23 +1,31 @@
 use codec::Encode;
-use sp_runtime::DeserializeOwned;
+use sp_runtime::{ generic::Header, DeserializeOwned, traits::BlakeTwo256};
 use substrate_airgapped::{
 	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, Mortality, Tx,
 };
+use sp_core::H256;
 
-// Example only deps - not included in substrate-airgapped
+// Example deps
 use hex;
+use reqwest::{self};
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_version::RuntimeVersion;
 use std::convert::*;
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let (genesis_hash, version) = gather_inputs()?;
-	let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]); // TODO this panics
+	// Get the latest block hash and then make all non historic queries at that block.
+	let block_hash = rpc_to_local_node::<(), String>("chain_getBlockHash", vec![])?.result;
+	let runtime_version = rpc_to_local_node::<String, RuntimeVersion>("chain_getRuntimeVersion", vec![block_hash.clone()])?
+		.result;
+	let header = rpc_to_local_node::<String, Header<u32, BlakeTwo256>>("chain_getHeader", vec![block_hash.clone()])?.result;
+	let genesis_hash =
+		rpc_to_local_node::<usize, String>("chain_getBlockHash", vec![0])
+			.and_then(|rpc_res| Ok(string_to_h256(&rpc_res.result)))?;
+	let block_hash = string_to_h256(&block_hash[..]);
 
 	type Runtime = KusamaRuntime;
 	type TransferType = Transfer<Runtime>;
@@ -31,11 +39,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let tx: Tx<TransferType, Runtime> = Tx::new(
 		transfer_call,
 		alice_addr,
-		0,
-		version.transaction_version,
-		version.spec_version,
+		2,
+		runtime_version.transaction_version,
+		runtime_version.spec_version,
 		genesis_hash,
-		Mortality::Immortal,
+		Mortality::Mortal(64, header.number as u64, block_hash),
 	);
 
 	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair())?;
@@ -47,25 +55,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	Ok(())
 }
 
-/// The shape of an RPC JSON response object
+// TODO the below utils should be moved to another file so they can be shared across examples
+/// RPC response JSON object
 #[derive(Serialize, Deserialize)]
 struct RpcRes<T> {
 	jsonrpc: String,
 	result: T,
 }
 
-fn gather_inputs() -> Result<(Vec<u8>, RuntimeVersion), Box<dyn std::error::Error>> {
-	// Path to the directory where the RPC responses resides
-	let base_path =
-		env::current_dir()?.join("substrate-airgapped").join("examples").join("no_meta_transfer");
+/// RPC request JSON object
+#[derive(Serialize, Deserialize)]
+struct RpcReq<T: Serialize> {
+	jsonrpc: String,
+	id: usize,
+	method: String,
+	params: Vec<T>,
+}
 
-	let path_to_genesis_hash = base_path.clone().join("genesis.json");
-	let genesis_hash = rpc_to_bytes(path_to_genesis_hash)?;
+fn rpc_to_local_node<T: Serialize, U: DeserializeOwned>(
+	method: &str,
+	params: Vec<T>,
+) -> Result<RpcRes<U>, Box<dyn std::error::Error>> {
+	let local_node_url = "http://localhost:9933";
+	let client = reqwest::blocking::Client::new();
 
-	let path_to_runtime_version = base_path.join("version.json");
-	let runtime_version = rpc_to::<RuntimeVersion>(path_to_runtime_version)?;
+	let req_body = RpcReq { jsonrpc: "2.0".to_owned(), id: 1, method: method.to_owned(), params };
+	let res = client.post(local_node_url).json(&req_body).send()?.json()?;
 
-	Ok((genesis_hash, runtime_version))
+	Ok(res)
+}
+
+/// Convert a hex string to `H256`
+fn string_to_h256(value: &str) -> H256 {
+	// Slice of the "0x" prefix
+	let no_prefix = &value[2..];
+	let bytes = hex::decode(no_prefix).expect("only valid hex strings are passed in");
+
+	H256::from_slice(bytes.as_slice())
 }
 
 /// Read in a scale encoded hex `result` from the response to a RPC call.
@@ -77,7 +103,8 @@ fn gather_inputs() -> Result<(Vec<u8>, RuntimeVersion), Box<dyn std::error::Erro
 /// ```
 ///
 /// where `result` is a field representing scale encoded bytes.
-pub fn rpc_to_bytes(path: PathBuf) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn rpc_to_bytes(path: PathBuf) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
 	let contents = file_to_string(path)?;
 
 	let rpc_response: RpcRes<String> = serde_json::from_str(&contents)?;
@@ -99,7 +126,8 @@ pub fn rpc_to_bytes(path: PathBuf) -> Result<Vec<u8>, Box<dyn std::error::Error>
 /// ```
 ///
 /// where `result` is a field representing a struct in JSON.
-pub fn rpc_to<T: DeserializeOwned>(path: PathBuf) -> Result<T, Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+fn rpc_to<T: DeserializeOwned>(path: PathBuf) -> Result<T, Box<dyn std::error::Error>> {
 	let contents = file_to_string(path)?;
 
 	let rpc_response: RpcRes<T> = serde_json::from_str(&contents)?;
@@ -108,6 +136,7 @@ pub fn rpc_to<T: DeserializeOwned>(path: PathBuf) -> Result<T, Box<dyn std::erro
 }
 
 /// Read a file to a string (non-buffered).
+#[allow(dead_code)]
 fn file_to_string(path: PathBuf) -> Result<String, Box<dyn std::error::Error>> {
 	let mut file = File::open(path)?;
 	let mut contents = String::new();

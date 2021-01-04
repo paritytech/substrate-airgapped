@@ -94,6 +94,7 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 	/// Create a `SignedPayload`, the payload to sign.
 	pub fn signed_payload(&self) -> SignedPayload<C, R> {
 		let extra = self.extra();
+
 		SignedPayload::<C, R>::new(self.call.clone(), extra.extra())
 			.expect("TODO signed payload constructs")
 	}
@@ -150,7 +151,7 @@ mod tests {
 			147, 77, 30, 241, 157, 155, 28, 177, 225, 8, 87, 182, 228, 162, 79, 230, 196, 149, 215,
 			168, 99, 34, 136, 35, 92, 20, 18, 83, 139, 132,
 		];
-		assert_eq!(signed_payload_encoded_expected.to_vec(), tx.signed_payload().encode())
+		assert_eq!(signed_payload_encoded_expected.to_vec(), tx.signed_payload().encode());
 	}
 
 	#[test]
