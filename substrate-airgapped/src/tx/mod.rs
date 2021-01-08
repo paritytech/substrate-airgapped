@@ -4,7 +4,6 @@ mod mortality;
 
 pub use self::{
 	generic_call::{CallIndex, GenericCall},
-	// tx::{tx_from_parts, SignedPayload, Tx, TxConfig, UncheckedExtrinsic},
 	mortality::{MortalConfig, Mortality}
 };
 
