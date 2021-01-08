@@ -1,16 +1,17 @@
 use codec::Encode;
+use sp_core::H256;
 use sp_runtime::{generic::Header, traits::BlakeTwo256, DeserializeOwned};
 use substrate_airgapped::{
 	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, MortalConfig, Mortality, Tx,
 	TxConfig,
 };
 
-// Example deps
+// Deps not used in substrate-airgapped
 use hex;
+use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_version::RuntimeVersion;
 use std::convert::*;
-use util::{rpc_to_local_node, string_to_h256};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// Get the latest block hash and then make all non historic queries at that block.
@@ -62,4 +63,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	println!("Submit this: {:#?}", tx_encoded);
 
 	Ok(())
+}
+
+/// RPC response JSON object
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RpcRes<T> {
+	jsonrpc: String,
+	/// Result of the RPC execution
+	pub result: T,
+}
+
+/// RPC request JSON object
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RpcReq<T: Serialize> {
+	jsonrpc: String,
+	id: usize,
+	method: String,
+	params: Vec<T>,
+}
+
+/// Send an RPC request to the default local node http address.
+pub fn rpc_to_local_node<T: Serialize, U: Serialize>(
+	method: &str,
+	params: Vec<T>,
+) -> Result<RpcRes<U>, Box<dyn std::error::Error>> {
+	let local_node_url = "http://localhost:9933";
+	let client = reqwest::blocking::Client::new();
+
+	let req_body = RpcReq { jsonrpc: "2.0".to_owned(), id: 1, method: method.to_owned(), params };
+	let res = client.post(local_node_url).json(&req_body).send()?.json()?;
+
+	Ok(res)
+}
+
+/// Convert a hex string to `H256`.
+pub fn string_to_h256(value: &str) -> H256 {
+	// Slice of the "0x" prefix
+	let no_prefix = &value[2..];
+	let bytes = hex::decode(no_prefix).expect("only valid hex strings are passed in");
+
+	H256::from_slice(bytes.as_slice())
 }

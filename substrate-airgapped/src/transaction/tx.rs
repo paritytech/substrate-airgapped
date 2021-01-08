@@ -212,14 +212,23 @@ mod tests {
 		let alice_addr = AccountKeyring::Alice.to_account_id().into();
 
 		let transfer_args: TransferType = Transfer { to: bob_addr, amount: 12 };
-		let transfer_call = GenericCall { call_index: CallIndex::new(5, 0), args: transfer_args };
+		let transfer_call = GenericCall::new(CallIndex::new(5, 0), transfer_args);
 		let genesis_hash = [
 			221, 185, 147, 77, 30, 241, 157, 155, 28, 177, 225, 8, 87, 182, 228, 162, 79, 230, 196,
 			149, 215, 168, 99, 34, 136, 35, 92, 20, 18, 83, 139, 132,
 		];
 		let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]);
-		let tx: Tx<TransferType, KusamaRuntime> =
-			Tx::new(transfer_call, alice_addr, 0, 4, 26, genesis_hash, Mortality::Immortal, 0);
+		let tx_config = TxConfig {
+			call: transfer_call,
+			address: alice_addr,
+			nonce: 0,
+			tx_version: 4,
+			spec_version: 26,
+			genesis_hash,
+			mortality: Mortality::Immortal,
+			tip: 0,
+		};
+		let tx: Tx<TransferType, KusamaRuntime> = Tx::new(tx_config);
 
 		tx
 	}
@@ -276,7 +285,7 @@ mod tests {
 
 		let transfer_args: TransferType =
 			Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 12 };
-		let transfer_call = GenericCall { call_index: CallIndex::new(5, 0), args: transfer_args };
+		let transfer_call = GenericCall::new(CallIndex::new(5, 0), transfer_args);
 		assert_eq!(tx.call(), &transfer_call);
 		assert_eq!(tx.address(), &AccountKeyring::Alice.to_account_id());
 	}

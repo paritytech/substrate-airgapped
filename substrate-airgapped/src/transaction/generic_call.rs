@@ -39,10 +39,12 @@ pub struct GenericCall<C: Encode + Decode + Clone> {
 }
 
 impl<C> GenericCall<C>
-where C: Encode + Decode + Clone {
+where
+	C: Encode + Decode + Clone,
+{
 	/// Create a `GenericCall`
 	pub fn new(call_index: CallIndex, args: C) -> Self {
-		Self { call_index, args}
+		Self { call_index, args }
 	}
 	/// `CallIndex` of the call
 	pub fn call_index(&self) -> &CallIndex {

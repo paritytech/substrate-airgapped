@@ -17,3 +17,4 @@ substrate-airgapped = { version = "0.1.0", path = "../substrate-airgapped" }
 sp-keyring = { version = "2.0.0", package = "sp-keyring", default-features = false }
 hex = { version = "0.4.2" }
 util = { version = "0.1.0", package = "substrate-airgapped-util", path = "../util" }
+sp-core = { version = "2.0.0", default-features = false }

@@ -17,4 +17,7 @@ sp-core = { version = "2.0.0", default-features = false }
 sp-keyring = { version = "2.0.0", package = "sp-keyring", default-features = false }
 sp-version = { version = "2.0.0", package = "sp-version", default-features = false }
 hex = { version = "0.4.2" }
-util = { version = "0.1.0", package = "substrate-airgapped-util", path = "../util" }
+serde = { version = "1.0.115", features = ["derive"] }
+serde_json = "1.0.57"
+reqwest = { version = "0.10.10", features = ["json", "blocking"] }
+metadata = { version = "0.1.0", package = "substrate-airgapped-metadata", path = "../metadata" }
