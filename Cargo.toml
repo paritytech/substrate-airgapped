@@ -3,6 +3,5 @@
 members = [
   "substrate-airgapped",
   "cli",
-  "metadata",
-  "util"
+  "metadata"
 ]

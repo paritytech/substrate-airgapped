@@ -22,7 +22,7 @@ impl Metadata {
 	}
 
 	/// Encode a call with the bytes wrapped in `Encoded`
-	pub fn find_call_index<C: ModuleCall>(&self, call: C) -> Result<CallIndex, String> {
+	pub fn find_call_index<C: ModuleCall>(&self, call: &C) -> Result<CallIndex, String> {
 		let module_with_calls = self.module_with_calls(call.pallet())?;
 		let module_index = module_with_calls.index;
 		let call_index =
