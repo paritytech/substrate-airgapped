@@ -13,17 +13,14 @@ impl CallIndex {
 	pub fn module_index(&self) -> u8 {
 		self.module_index
 	}
-
 	/// Get `call_index`, the index of the call in the module
 	pub fn call_index(&self) -> u8 {
 		self.call_index
 	}
-
 	/// Create `CallIndex`
 	pub fn new(module_index: u8, call_index: u8) -> CallIndex {
 		CallIndex { module_index, call_index }
 	}
-
 	/// Create a vec representing the call index
 	pub fn to_vec(&self) -> Vec<u8> {
 		vec![self.module_index, self.call_index]

@@ -21,3 +21,4 @@ serde = { version = "1.0.115", features = ["derive"] }
 serde_json = "1.0.57"
 reqwest = { version = "0.10.10", features = ["json", "blocking"] }
 metadata = { version = "0.1.0", package = "substrate-airgapped-metadata", path = "../metadata" }
+frame-metadata = { version = "12", package = "frame-metadata", default-features = false }

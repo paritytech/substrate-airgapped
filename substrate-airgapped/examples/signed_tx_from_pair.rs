@@ -83,7 +83,7 @@ pub struct RpcReq<T: Serialize> {
 }
 
 /// Send an RPC request to the default local node http address.
-pub fn rpc_to_local_node<T: Serialize, U: Serialize>(
+pub fn rpc_to_local_node<T: Serialize, U: DeserializeOwned>(
 	method: &str,
 	params: Vec<T>,
 ) -> Result<RpcRes<U>, Box<dyn std::error::Error>> {

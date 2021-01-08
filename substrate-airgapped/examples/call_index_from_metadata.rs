@@ -1,8 +1,9 @@
+use ::core::convert::TryInto;
 use codec::Decode;
-use core::convert::TryInto;
+use frame_metadata::RuntimeMetadataPrefixed;
 use substrate_airgapped::{balances::Transfer, GenericCall};
 
-use metadata::{Metadata, RuntimeMetadataPrefixed};
+use metadata::Metadata;
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DeserializeOwned;
