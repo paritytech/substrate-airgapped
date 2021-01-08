@@ -1,9 +1,8 @@
 use ::core::convert::TryInto;
 use codec::Decode;
-use frame_metadata::RuntimeMetadataPrefixed;
 use substrate_airgapped::{balances::Transfer, GenericCall, KusamaRuntime};
 
-use metadata::Metadata;
+use metadata::{RuntimeMetadataPrefixed, Metadata};
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DeserializeOwned;
@@ -25,7 +24,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			Ok(hex::decode(no_prefix)?)
 		})?;
 
-	let metadata_prefixed: RuntimeMetadataPrefixed = Decode::decode(&mut &metadata_bytes[..])?;
+	let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut &metadata_bytes[..])?;
 	let metadata: Metadata = metadata_prefixed.try_into()?;
 
 	let args: Transfer<KusamaRuntime> = Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 123_456_789 };
