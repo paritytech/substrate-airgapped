@@ -4,7 +4,7 @@
 use codec::alloc::collections::HashMap;
 use core::convert::TryFrom;
 use frame_metadata::{DecodeDifferent, META_RESERVED};
-use substrate_airgapped::{CallIndex, ModuleCall};
+use substrate_airgapped::{CallIndex, PalletCall};
 
 pub use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 
@@ -22,11 +22,11 @@ impl Metadata {
 	}
 
 	/// Encode a call with the bytes wrapped in `Encoded`
-	pub fn find_call_index<C: ModuleCall>(&self, call: &C) -> Result<CallIndex, String> {
-		let module_with_calls = self.module_with_calls(call.pallet())?;
+	pub fn find_call_index<C: PalletCall>(&self) -> Result<CallIndex, String> {
+		let module_with_calls = self.module_with_calls(C::PALLET)?;
 		let module_index = module_with_calls.index;
 		let call_index =
-			module_with_calls.calls.get(call.call()).expect("TODO Could not find call method");
+			module_with_calls.calls.get(C::CALL).expect("TODO Could not find call method");
 
 		Ok(CallIndex::new(module_index, *call_index))
 	}
