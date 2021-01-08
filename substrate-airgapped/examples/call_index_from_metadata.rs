@@ -1,4 +1,4 @@
-use ::core::convert::TryInto;
+use core::convert::TryInto;
 use codec::Decode;
 use substrate_airgapped::{balances::Transfer, GenericCall, KusamaRuntime};
 
