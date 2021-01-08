@@ -28,10 +28,10 @@ pub type SignedPayload<C, R> = sp_runtime::generic::SignedPayload<GenericCall<C>
 pub struct MortalConfig<R: System> {
 	/// Duration of the transactions validity, measured in blocks, starting from the checkpoint block.
 	pub period: u64,
-	/// Block number where the transaction mortality period starts.
-	pub checkpoint_block_number: u64,
 	/// Hash of the block where the transaction's mortality period starts.
 	pub checkpoint_block_hash: R::Hash,
+	/// Block number where the transaction mortality period starts.
+	pub checkpoint_block_number: u64,
 }
 /// Specify the mortality of a transaction.
 ///
@@ -44,7 +44,6 @@ pub enum Mortality<R: System> {
 	/// Specify an immortal transaction
 	Immortal,
 }
-
 /// Configuration options for a Tx
 #[derive(Clone, PartialEq, Debug)]
 pub struct TxConfig<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
@@ -98,28 +97,13 @@ where
 	R: System + Runtime,
 {
 	let (call, extra, _) = payload.deconstruct();
-	let tx = UncheckedExtrinsic::<C, R>::new_signed(call, sender, signature, extra);
 
-	tx
+	UncheckedExtrinsic::<C, R>::new_signed(call, sender, signature, extra)
 }
 
 impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
-	/// Create transaction builder
-	pub fn new(
-		call: GenericCall<C>,
-		address: R::Address,
-		nonce: R::Index,
-		tx_version: u32,
-		spec_version: u32,
-		genesis_hash: R::Hash,
-		mortality: Mortality<R>,
-		tip: R::Balance,
-	) -> Self {
-		Tx { call, address, nonce, tx_version, spec_version, genesis_hash, mortality, tip }
-	}
-
 	/// Create a transaction builder from TxConfig
-	pub fn from_config(config: TxConfig<C, R>) -> Self {
+	pub fn new(config: TxConfig<C, R>) -> Self {
 		Tx {
 			call: config.call,
 			address: config.address,

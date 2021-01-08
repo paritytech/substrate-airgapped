@@ -1,11 +1,12 @@
-// use crate::frame::CallMethod;
-use crate::{frame::ModuleCall, transaction::CallIndex};
+//! Runtime metadata decoding and lookup support for substrate-airgapped
+#![warn(missing_docs)]
+
 use codec::alloc::collections::HashMap;
 use core::convert::TryFrom;
+use frame_metadata::{DecodeDifferent, META_RESERVED};
+use substrate_airgapped::{CallIndex, ModuleCall};
 
-pub use frame_metadata::{
-	DecodeDifferent, RuntimeMetadata, RuntimeMetadataPrefixed, META_RESERVED,
-};
+pub use frame_metadata::{RuntimeMetadata, RuntimeMetadataPrefixed};
 
 /// Runtime metadata.
 #[derive(Clone, Debug)]
@@ -21,7 +22,7 @@ impl Metadata {
 	}
 
 	/// Encode a call with the bytes wrapped in `Encoded`
-	pub fn call_index<C: ModuleCall>(&self, call: C) -> Result<CallIndex, String> {
+	pub fn find_call_index<C: ModuleCall>(&self, call: C) -> Result<CallIndex, String> {
 		let module_with_calls = self.module_with_calls(call.pallet())?;
 		let module_index = module_with_calls.index;
 		let call_index =
@@ -56,10 +57,10 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 				let mut calls = HashMap::new();
 				for (index, call) in convert(calls_meta)?.into_iter().enumerate() {
 					let call_name = convert(call.name)?;
-					calls.insert(call_name, index as u8);
+					calls.insert(call_name.to_string(), index as u8);
 				}
 
-				let module_name = convert(module.name)?;
+				let module_name = convert(module.name)?.to_string();
 				modules_with_calls.insert(
 					module_name.clone(),
 					ModuleWithCalls { index: module.index, name: module_name, calls },
@@ -67,7 +68,7 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 			}
 		}
 
-		Ok(Metadata { modules_with_calls: modules_with_calls })
+		Ok(Metadata { modules_with_calls })
 	}
 }
 

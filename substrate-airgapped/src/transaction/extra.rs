@@ -9,7 +9,7 @@ use sp_runtime::{
 };
 
 /// Extra type.
-pub type Extra<T> = <<T as Runtime>::Extra as SignedExtra<T>>::Extra;
+pub type Extra<R> = <<R as Runtime>::Extra as SignedExtra<R>>::Extra;
 
 /// SignedExtra checks copied from substrate, in order to remove requirement to implement
 /// substrate's `frame_system::Trait`
@@ -215,6 +215,7 @@ pub struct DefaultExtra<T: System + Balances> {
 }
 
 impl<T: System + Balances + Clone + Debug + Eq + Send + Sync> SignedExtra<T> for DefaultExtra<T> {
+	#[allow(clippy::type_complexity)]
 	type Extra = (
 		CheckSpecVersion<T>,
 		CheckTxVersion<T>,

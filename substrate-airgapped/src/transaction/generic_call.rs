@@ -25,19 +25,33 @@ impl CallIndex {
 	}
 
 	/// Create a vec representing the call index
-	pub fn to_vec(self) -> Vec<u8> {
+	pub fn to_vec(&self) -> Vec<u8> {
 		vec![self.module_index, self.call_index]
 	}
 }
 
-/// Call represented by call index and argument struct.
-/// This has the ability to correctly encode and decode itself without metadata.
+/// Call (a.k.a dispatchable) represented by call index and argument struct.
+/// This has the ability to correctly encode and decode itself.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GenericCall<C: Encode + Decode + Clone> {
-	/// `CallIndex`
-	pub call_index: CallIndex,
-	/// Arguments
-	pub args: C,
+	call_index: CallIndex,
+	args: C,
+}
+
+impl<C> GenericCall<C>
+where C: Encode + Decode + Clone {
+	/// Create a `GenericCall`
+	pub fn new(call_index: CallIndex, args: C) -> Self {
+		Self { call_index, args}
+	}
+	/// `CallIndex` of the call
+	pub fn call_index(&self) -> &CallIndex {
+		&self.call_index
+	}
+	/// Arguments of the call
+	pub fn args(&self) -> &C {
+		&self.args
+	}
 }
 
 impl<C: Encode + Decode + Clone> Encode for GenericCall<C> {
@@ -75,7 +89,7 @@ mod test {
 	fn generic_call_encode_decode() {
 		let bob_addr = AccountKeyring::Bob.to_account_id().into();
 		let transfer_args: TransferType = Transfer { to: bob_addr, amount: 12 };
-		let transfer = GenericCall { call_index: CallIndex::new(5, 0), args: transfer_args };
+		let transfer = GenericCall::new(CallIndex::new(5, 0), transfer_args);
 
 		// Independent parts of the call encode as expected
 		assert_eq!(transfer.call_index.to_vec(), [5, 0]);
