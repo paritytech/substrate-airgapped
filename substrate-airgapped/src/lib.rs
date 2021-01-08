@@ -3,12 +3,12 @@
 
 mod frame;
 mod runtimes;
-mod transaction;
+mod tx;
 
 pub use crate::{
 	frame::{balances, system, ModuleCall},
 	runtimes::KusamaRuntime,
-	transaction::{
+	tx::{
 		tx_from_parts, CallIndex, GenericCall, MortalConfig, Mortality, SignedPayload, Tx,
 		TxConfig, UncheckedExtrinsic,
 	},

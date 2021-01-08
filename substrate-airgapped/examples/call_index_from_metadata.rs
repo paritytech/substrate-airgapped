@@ -8,9 +8,22 @@ use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DeserializeOwned;
 
+/// To get a local development node started, follow the instructions in the
+/// paritytech/polkadot README and then start the dev node with the command
+/// described [here](https://github.com/paritytech/polkadot#development).
+///
+/// For this example, we assume the nodes http RPC port is accessible via
+///`http://localhost:9933`, which is the default.
+///
+/// Prior to running the following example, you will need to start up a polkadot
+/// `--dev` node, as it is queried to get the runtime metadata.
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let metadata_bytes = rpc_to_local_node::<(), String>("state_getMetadata", vec![])
-		.and_then(|rpc_res| Ok(hex::decode(rpc_res.result)?))?;
+		.and_then(|rpc_res| {
+			// Remove the leading "0x"
+			let no_prefix = &rpc_res.result[2..];
+			Ok(hex::decode(no_prefix)?)
+		})?;
 
 	let metadata_prefixed: RuntimeMetadataPrefixed = Decode::decode(&mut &metadata_bytes[..])?;
 	let metadata: Metadata = metadata_prefixed.try_into()?;
