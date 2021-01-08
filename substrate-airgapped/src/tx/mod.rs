@@ -1,7 +1,13 @@
-use super::{
-	extra::{Extra, SignedExtra},
-	GenericCall,
+pub(crate) mod extra;
+mod generic_call;
+mod mortality;
+
+pub use self::{
+	generic_call::{CallIndex, GenericCall},
+	mortality::{MortalConfig, Mortality}
 };
+
+use self::extra::{Extra, SignedExtra};
 use crate::{
 	frame::{balances::Balances, system::System},
 	runtimes::Runtime,
@@ -20,30 +26,6 @@ pub type UncheckedExtrinsic<C, R> = sp_runtime::generic::UncheckedExtrinsic<
 
 /// Local `SignedPayload` convenience type. This is the payload that gets signed.
 pub type SignedPayload<C, R> = sp_runtime::generic::SignedPayload<GenericCall<C>, Extra<R>>;
-
-/// Mortal period configuration options,
-///
-/// Read here for conceptual details: https://docs.rs/sp-runtime/2.0.0/sp_runtime/generic/enum.Era.html
-#[derive(Clone, Eq, PartialEq, Debug, Copy)]
-pub struct MortalConfig<R: System> {
-	/// Duration of the transactions validity, measured in blocks, starting from the checkpoint block.
-	pub period: u64,
-	/// Block number where the transaction mortality period starts.
-	pub checkpoint_block_number: u64,
-	/// Hash of the block where the transaction's mortality period starts.
-	pub checkpoint_block_hash: R::Hash,
-}
-/// Specify the mortality of a transaction.
-///
-/// Read here for conceptual details: https://docs.rs/sp-runtime/2.0.0/sp_runtime/generic/enum.Era.html
-#[derive(Clone, Eq, PartialEq, Debug, Copy)]
-pub enum Mortality<R: System> {
-	/// Specify a mortal transaction with period, checkpoint block number, and
-	/// checkpoint block hash
-	Mortal(MortalConfig<R>),
-	/// Specify an immortal transaction
-	Immortal,
-}
 
 /// Configuration options for a Tx
 #[derive(Clone, PartialEq, Debug)]
@@ -98,28 +80,13 @@ where
 	R: System + Runtime,
 {
 	let (call, extra, _) = payload.deconstruct();
-	let tx = UncheckedExtrinsic::<C, R>::new_signed(call, sender, signature, extra);
 
-	tx
+	UncheckedExtrinsic::<C, R>::new_signed(call, sender, signature, extra)
 }
 
 impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
-	/// Create transaction builder
-	pub fn new(
-		call: GenericCall<C>,
-		address: R::Address,
-		nonce: R::Index,
-		tx_version: u32,
-		spec_version: u32,
-		genesis_hash: R::Hash,
-		mortality: Mortality<R>,
-		tip: R::Balance,
-	) -> Self {
-		Tx { call, address, nonce, tx_version, spec_version, genesis_hash, mortality, tip }
-	}
-
 	/// Create a transaction builder from TxConfig
-	pub fn from_config(config: TxConfig<C, R>) -> Self {
+	pub fn new(config: TxConfig<C, R>) -> Self {
 		Tx {
 			call: config.call,
 			address: config.address,
@@ -228,14 +195,23 @@ mod tests {
 		let alice_addr = AccountKeyring::Alice.to_account_id().into();
 
 		let transfer_args: TransferType = Transfer { to: bob_addr, amount: 12 };
-		let transfer_call = GenericCall { call_index: CallIndex::new(5, 0), args: transfer_args };
+		let transfer_call = GenericCall::new(CallIndex::new(5, 0), transfer_args);
 		let genesis_hash = [
 			221, 185, 147, 77, 30, 241, 157, 155, 28, 177, 225, 8, 87, 182, 228, 162, 79, 230, 196,
 			149, 215, 168, 99, 34, 136, 35, 92, 20, 18, 83, 139, 132,
 		];
 		let genesis_hash = sp_core::H256::from_slice(&genesis_hash[..]);
-		let tx: Tx<TransferType, KusamaRuntime> =
-			Tx::new(transfer_call, alice_addr, 0, 4, 26, genesis_hash, Mortality::Immortal, 0);
+		let tx_config = TxConfig {
+			call: transfer_call,
+			address: alice_addr,
+			nonce: 0,
+			tx_version: 4,
+			spec_version: 26,
+			genesis_hash,
+			mortality: Mortality::Immortal,
+			tip: 0,
+		};
+		let tx: Tx<TransferType, KusamaRuntime> = Tx::new(tx_config);
 
 		tx
 	}
@@ -292,7 +268,7 @@ mod tests {
 
 		let transfer_args: TransferType =
 			Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 12 };
-		let transfer_call = GenericCall { call_index: CallIndex::new(5, 0), args: transfer_args };
+		let transfer_call = GenericCall::new(CallIndex::new(5, 0), transfer_args);
 		assert_eq!(tx.call(), &transfer_call);
 		assert_eq!(tx.address(), &AccountKeyring::Alice.to_account_id());
 	}

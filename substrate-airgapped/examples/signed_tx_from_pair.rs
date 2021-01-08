@@ -8,14 +8,10 @@ use substrate_airgapped::{
 
 // Example deps
 use hex;
-use reqwest::{self};
+use reqwest;
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_version::RuntimeVersion;
-use std::convert::*;
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// Get the latest block hash and then make all non historic queries at that block.
@@ -34,16 +30,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		.and_then(|rpc_res| Ok(string_to_h256(&rpc_res.result)))?;
 	let block_hash = string_to_h256(&block_hash[..]);
 
-	type Runtime = KusamaRuntime;
-	type TransferType = Transfer<Runtime>;
+	type TransferType = Transfer<KusamaRuntime>;
 
 	let alice_addr = AccountKeyring::Alice.to_account_id().into();
 	let bob_addr = AccountKeyring::Bob.to_account_id().into();
-	let transfer_args = Transfer { to: bob_addr, amount: 123_456 };
-	let call_index = CallIndex::new(5, 0);
-	let transfer_call = GenericCall { call_index, args: transfer_args };
+	let transfer_call =
+		GenericCall::new(CallIndex::new(5, 0), Transfer { to: bob_addr, amount: 123_456 });
 
-	let tx: Tx<TransferType, Runtime> = Tx::from_config(TxConfig {
+	let tx: Tx<TransferType, KusamaRuntime> = Tx::new(TxConfig {
 		call: transfer_call,
 		address: alice_addr,
 		nonce: 0,
@@ -84,6 +78,7 @@ struct RpcReq<T: Serialize> {
 	params: Vec<T>,
 }
 
+/// Send an RPC to a node with default local http address exposed
 fn rpc_to_local_node<T: Serialize, U: DeserializeOwned>(
 	method: &str,
 	params: Vec<T>,
@@ -105,6 +100,11 @@ fn string_to_h256(value: &str) -> H256 {
 
 	H256::from_slice(bytes.as_slice())
 }
+
+// The below may be useful for those reading from file on an offline device... not sure where to put them
+use std::fs::File;
+use std::io::prelude::*;
+use std::path::PathBuf;
 
 /// Read in a scale encoded hex `result` from the response to a RPC call.
 ///

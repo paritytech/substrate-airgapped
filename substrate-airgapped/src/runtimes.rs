@@ -1,6 +1,6 @@
 use crate::{
 	frame::{balances::Balances, system::System},
-	transaction::extra::{DefaultExtra, SignedExtra},
+	tx::extra::{DefaultExtra, SignedExtra},
 };
 use codec::{Decode, Encode};
 use core::fmt::Debug;
@@ -11,9 +11,9 @@ use sp_runtime::{
 
 /// Trait to encompassing types from a runtime and its pallets.
 pub trait Runtime: System + Balances + Sized + Send + Sync + 'static {
-	/// Signature type
+	/// Signature type.
 	type Signature: Verify + Encode + Debug + Decode + Eq + Send + Sync + Clone + 'static;
-	/// Transaction extras
+	/// Transaction extras.
 	type Extra: SignedExtra<Self> + Send + Decode + Sync + 'static;
 }
 
