@@ -27,11 +27,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut &metadata_bytes[..])?;
 	let metadata: Metadata = metadata_prefixed.try_into()?;
 
-	let args: Transfer<KusamaRuntime> = Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 123_456_789 };
+	type TransferType = Transfer<KusamaRuntime>;
+
 	// Use the `CallMethod` to fetch the `CallIndex` of the dispatchable
-	let call_index = metadata.find_call_index(&args)?;
+	let call_index = metadata.find_call_index::<TransferType>()?;
 	println!("Call index for balances::Transfer: {:#?}", call_index);
 
+	let args: Transfer<KusamaRuntime> = Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 123_456_789 };
 	// You can then use the returned call index to construct a `GenericCall` - the type needed to
 	// construct a `UncheckedExtrinsic`
 	let transfer_call = GenericCall::new(call_index, args);

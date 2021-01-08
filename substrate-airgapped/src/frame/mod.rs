@@ -13,9 +13,9 @@ impl<T> Parameter for T where T: codec::Codec + Clone + Eq + core::fmt::Debug {}
 
 /// Trait that call argument definitions should implement. Allows for look ups of
 /// the call in metadata.
-pub trait ModuleCall {
-	/// Name of the cal, as it appears in metadata
-	fn call(&self) -> &'static str;
+pub trait PalletCall {
+	/// Name of the call, as it appears in metadata
+	const CALL: &'static str;
 	/// Name of the pallet, as it appears in metadata
-	fn pallet(&self) -> &'static str;
+	const PALLET: &'static str;
 }

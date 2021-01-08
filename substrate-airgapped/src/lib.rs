@@ -6,7 +6,7 @@ mod runtimes;
 mod tx;
 
 pub use crate::{
-	frame::{balances, system, ModuleCall},
+	frame::{balances, system, PalletCall},
 	runtimes::KusamaRuntime,
 	tx::{
 		tx_from_parts, CallIndex, GenericCall, MortalConfig, Mortality, SignedPayload, Tx,

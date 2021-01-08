@@ -32,14 +32,10 @@ pub struct Transfer<T: Balances + System> {
 	pub amount: T::Balance,
 }
 
-impl<T> super::ModuleCall for Transfer<T>
+impl<T> super::PalletCall for Transfer<T>
 where
 	T: Balances + System,
 {
-	fn call(&self) -> &'static str {
-		"transfer"
-	}
-	fn pallet(&self) -> &'static str {
-		"Balances"
-	}
+	const CALL: &'static str = "transfer";
+	const PALLET: &'static str = "Balances";
 }
