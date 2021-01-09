@@ -1,8 +1,8 @@
-use core::convert::TryInto;
 use codec::Decode;
+use core::convert::TryInto;
 use substrate_airgapped::{balances::Transfer, GenericCall, KusamaRuntime};
 
-use metadata::{RuntimeMetadataPrefixed, Metadata};
+use metadata::{Metadata, RuntimeMetadataPrefixed};
 use serde::{Deserialize, Serialize};
 use sp_keyring::AccountKeyring;
 use sp_runtime::DeserializeOwned;
@@ -17,23 +17,24 @@ use sp_runtime::DeserializeOwned;
 /// Prior to running the following example, you will need to start up a polkadot
 /// `--dev` node, as it is queried to get the runtime metadata.
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let metadata_bytes = rpc_to_local_node::<(), String>("state_getMetadata", vec![])
-		.and_then(|rpc_res| {
+	let metadata_bytes =
+		rpc_to_local_node::<(), String>("state_getMetadata", vec![]).and_then(|rpc_res| {
 			// Remove the leading "0x"
 			let no_prefix = &rpc_res.result[2..];
 			Ok(hex::decode(no_prefix)?)
 		})?;
 
 	let metadata_prefixed = RuntimeMetadataPrefixed::decode(&mut &metadata_bytes[..])?;
-	let metadata: Metadata = metadata_prefixed.try_into()?;
+	let metadata: Metadata = metadata_prefixed.try_into().expect("example to work");
 
 	type TransferType = Transfer<KusamaRuntime>;
 
 	// Use the `CallMethod` to fetch the `CallIndex` of the dispatchable
-	let call_index = metadata.find_call_index::<TransferType>()?;
+	let call_index = metadata.find_call_index::<TransferType>().expect("example to work");
 	println!("Call index for balances::Transfer: {:#?}", call_index);
 
-	let args: Transfer<KusamaRuntime> = Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 123_456_789 };
+	let args: Transfer<KusamaRuntime> =
+		Transfer { to: AccountKeyring::Bob.to_account_id().into(), amount: 123_456_789 };
 	// You can then use the returned call index to construct a `GenericCall` - the type needed to
 	// construct a `UncheckedExtrinsic`
 	let transfer_call = GenericCall::new(call_index, args);

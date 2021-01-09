@@ -1,6 +1,5 @@
-use crate::{
-	frame::system::System
-};
+use crate::frame::system::System;
+
 /// Mortal period configuration options,
 ///
 /// Read here for conceptual details: https://docs.rs/sp-runtime/2.0.0/sp_runtime/generic/enum.Era.html
@@ -13,6 +12,7 @@ pub struct MortalConfig<R: System> {
 	/// Block number where the transaction mortality period starts.
 	pub checkpoint_block_number: u64,
 }
+
 /// Specify the mortality of a transaction.
 ///
 /// Read here for conceptual details: https://docs.rs/sp-runtime/2.0.0/sp_runtime/generic/enum.Era.html
