@@ -16,7 +16,10 @@ pub struct Metadata {
 
 impl Metadata {
 	/// Returns `ModuleWithCalls`.
-	fn module_with_calls<S: ToString>(&self, name: S) -> Result<&ModuleWithCalls, substrate_airgapped::Error> {
+	fn module_with_calls<S: ToString>(
+		&self,
+		name: S,
+	) -> Result<&ModuleWithCalls, substrate_airgapped::Error> {
 		let name = name.to_string();
 		self.modules_with_calls
 			.get(&name)
@@ -76,7 +79,9 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 	}
 }
 
-fn convert<B: 'static, O: 'static>(dd: DecodeDifferent<B, O>) -> Result<O, substrate_airgapped::Error> {
+fn convert<B: 'static, O: 'static>(
+	dd: DecodeDifferent<B, O>,
+) -> Result<O, substrate_airgapped::Error> {
 	match dd {
 		DecodeDifferent::Decoded(value) => Ok(value),
 		_ => Err("Expected decoded".into()),

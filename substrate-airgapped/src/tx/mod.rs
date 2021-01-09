@@ -236,12 +236,13 @@ mod tests {
 	fn tx_correctly_constructs_encoded_transaction_from_keyring_pair() {
 		let tx = test_tx_instance();
 
-		let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair()).expect("test case works");
+		let signed_tx =
+			tx.signed_tx_from_pair(AccountKeyring::Alice.pair()).expect("test case works");
 		let signed_tx_encoded = signed_tx.encode().to_vec();
 
 		let version_and_address = [
-			33u8, 2, 132, 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159,
-			214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125, 1,
+			33u8, 2, 132, 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214,
+			130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125, 1,
 		];
 		assert_eq!(version_and_address, signed_tx_encoded[0..36]);
 
