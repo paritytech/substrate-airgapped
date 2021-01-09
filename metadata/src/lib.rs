@@ -16,17 +16,24 @@ pub struct Metadata {
 
 impl Metadata {
 	/// Returns `ModuleWithCalls`.
-	fn module_with_calls<S: ToString>(&self, name: S) -> Result<&ModuleWithCalls, String> {
+	fn module_with_calls<S: ToString>(
+		&self,
+		name: S,
+	) -> Result<&ModuleWithCalls, substrate_airgapped::Error> {
 		let name = name.to_string();
-		self.modules_with_calls.get(&name).ok_or(format!("Module not found {}", name))
+		self.modules_with_calls
+			.get(&name)
+			.ok_or_else(|| "Module could not be found in runtime metadata".into())
 	}
 
 	/// Encode a call with the bytes wrapped in `Encoded`
-	pub fn find_call_index<C: PalletCall>(&self) -> Result<CallIndex, String> {
+	pub fn find_call_index<C: PalletCall>(&self) -> Result<CallIndex, substrate_airgapped::Error> {
 		let module_with_calls = self.module_with_calls(C::PALLET)?;
 		let module_index = module_with_calls.index;
-		let call_index =
-			module_with_calls.calls.get(C::CALL).expect("TODO Could not find call method");
+		let call_index = module_with_calls
+			.calls
+			.get(C::CALL)
+			.ok_or("Call could not be found in module runtime metadata")?;
 
 		Ok(CallIndex::new(module_index, *call_index))
 	}
@@ -40,9 +47,9 @@ struct ModuleWithCalls {
 }
 
 impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
-	type Error = String;
+	type Error = substrate_airgapped::Error;
 
-	fn try_from(metadata: RuntimeMetadataPrefixed) -> Result<Self, String> {
+	fn try_from(metadata: RuntimeMetadataPrefixed) -> Result<Self, substrate_airgapped::Error> {
 		if metadata.0 != META_RESERVED {
 			return Err("Failed to convert".into());
 		}
@@ -72,7 +79,9 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 	}
 }
 
-fn convert<B: 'static, O: 'static>(dd: DecodeDifferent<B, O>) -> Result<O, String> {
+fn convert<B: 'static, O: 'static>(
+	dd: DecodeDifferent<B, O>,
+) -> Result<O, substrate_airgapped::Error> {
 	match dd {
 		DecodeDifferent::Decoded(value) => Ok(value),
 		_ => Err("Expected decoded".into()),

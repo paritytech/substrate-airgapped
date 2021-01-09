@@ -4,13 +4,14 @@ mod mortality;
 
 pub use self::{
 	generic_call::{CallIndex, GenericCall},
-	mortality::{MortalConfig, Mortality}
+	mortality::{MortalConfig, Mortality},
 };
 
 use self::extra::{Extra, SignedExtra};
 use crate::{
 	frame::{balances::Balances, system::System},
 	runtimes::Runtime,
+	Error,
 };
 use codec::{Decode, Encode};
 use sp_core::Pair;
@@ -160,20 +161,19 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 	}
 
 	/// Create a `SignedPayload`, the payload to sign.
-	pub fn signed_payload(&self) -> SignedPayload<C, R> {
+	pub fn signed_payload(&self) -> Result<SignedPayload<C, R>, Error> {
 		let extra = self.extra();
 
-		SignedPayload::<C, R>::new(self.call.clone(), extra.extra())
-			.expect("TODO signed payload constructs")
+		SignedPayload::<C, R>::new(self.call.clone(), extra.extra()).map_err(Into::into)
 	}
 
 	/// Create a signed `UncheckedExtrinsic` (AKA transaction) using the given keyring pair to sign.
-	pub fn signed_tx_from_pair<P>(&self, pair: P) -> Result<UncheckedExtrinsic<C, R>, String>
+	pub fn signed_tx_from_pair<P>(&self, pair: P) -> Result<UncheckedExtrinsic<C, R>, Error>
 	where
 		P: Pair,
 		<R as Runtime>::Signature: From<<P as sp_core::Pair>::Signature>,
 	{
-		let payload = self.signed_payload();
+		let payload = self.signed_payload()?;
 		let signature = payload.using_encoded(|payload| pair.sign(payload));
 		let tx = tx_from_parts::<C, R>(self.address.clone(), signature.into(), payload);
 
@@ -228,21 +228,23 @@ mod tests {
 			147, 77, 30, 241, 157, 155, 28, 177, 225, 8, 87, 182, 228, 162, 79, 230, 196, 149, 215,
 			168, 99, 34, 136, 35, 92, 20, 18, 83, 139, 132,
 		];
-		assert_eq!(signed_payload_encoded_expected.to_vec(), tx.signed_payload().encode());
+		let signed_payload = tx.signed_payload().expect("test case works");
+		assert_eq!(signed_payload_encoded_expected.to_vec(), signed_payload.encode());
 	}
 
 	#[test]
 	fn tx_correctly_constructs_encoded_transaction_from_keyring_pair() {
 		let tx = test_tx_instance();
 
-		let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair());
+		let signed_tx =
+			tx.signed_tx_from_pair(AccountKeyring::Alice.pair()).expect("test case works");
 		let signed_tx_encoded = signed_tx.encode().to_vec();
 
 		let version_and_address = [
-			0u8, 33, 2, 132, 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159,
-			214, 130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125, 1,
+			33u8, 2, 132, 212, 53, 147, 199, 21, 253, 211, 28, 97, 20, 26, 189, 4, 169, 159, 214,
+			130, 44, 133, 88, 133, 76, 205, 227, 154, 86, 132, 231, 165, 109, 162, 125, 1,
 		];
-		assert_eq!(version_and_address, signed_tx_encoded[0..37]);
+		assert_eq!(version_and_address, signed_tx_encoded[0..36]);
 
 		// Sig is non-deterministic so we do not assert equivalence
 		let _sig = [
@@ -253,13 +255,13 @@ mod tests {
 		];
 
 		let extra = [0, 0, 0];
-		assert_eq!(extra, signed_tx_encoded[101..104]);
+		assert_eq!(extra, signed_tx_encoded[100..103]);
 
 		let call = [
 			5, 0, 142, 175, 4, 21, 22, 135, 115, 99, 38, 201, 254, 161, 126, 37, 252, 82, 135, 97,
 			54, 147, 201, 18, 144, 156, 178, 38, 170, 71, 148, 242, 106, 72, 48,
 		];
-		assert_eq!(call, signed_tx_encoded[104..]);
+		assert_eq!(call, signed_tx_encoded[103..]);
 	}
 
 	#[test]

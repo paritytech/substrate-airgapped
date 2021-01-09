@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		tip: 100,
 	});
 
-	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair())?;
+	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair()).expect("example to work");
 	println!("Tx (UncheckedExtrinsic): {:#?}\n", signed_tx);
 
 	let tx_encoded = hex::encode(signed_tx.encode());
