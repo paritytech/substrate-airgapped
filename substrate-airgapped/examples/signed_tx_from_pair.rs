@@ -69,7 +69,7 @@ struct RpcRes<T> {
 /// RPC request JSON object
 #[derive(Serialize, Deserialize)]
 struct RpcReq<'a, T: Serialize> {
-	jsonrpc: &'static str,
+	jsonrpc: &'a str,
 	id: usize,
 	method: &'a str,
 	params: Vec<T>,
