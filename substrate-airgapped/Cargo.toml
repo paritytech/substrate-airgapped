@@ -18,7 +18,7 @@ anyhow = "1"
 [dev-dependencies]
 # Currently these are just to get the example going
 sp-keyring = { version = "2.0.1", default-features = false }
-sp-version = { version = "2.0.1", package = "sp-version" }
+sp-version = "2.0.1"
 hex = { version = "0.4.2" }
 serde = { version = "1.0.115", features = ["derive"] }
 serde_json = "1.0.57"
