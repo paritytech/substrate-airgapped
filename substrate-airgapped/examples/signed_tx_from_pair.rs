@@ -22,7 +22,7 @@ fn main() -> Result<(), Error> {
 	// Get the latest block hash and then make all non historic queries at that block.
 	let block_hash: H256 = rpc_to_local_node("chain_getBlockHash", Vec::<()>::new())?.result;
 	let runtime_version: RuntimeVersion =
-		rpc_to_local_node("chain_getRuntimeVersion", vec![block_hash.clone()])?.result;
+		rpc_to_local_node("chain_getRuntimeVersion", vec![block_hash])?.result;
 	let header: Header<u32, BlakeTwo256> =
 		rpc_to_local_node("chain_getHeader", vec![block_hash.clone()])?.result;
 
