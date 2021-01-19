@@ -23,4 +23,3 @@ serde_json = "1.0.57"
 reqwest = { version = "0.11", features = ["json", "blocking"] }
 metadata = { version = "0.1.0", package = "substrate-airgapped-metadata", path = "../metadata" }
 primitive-types = { version = "0.7", default-features = false, features = ["rustc-hex", "serde"] }
-anyhow = "1"

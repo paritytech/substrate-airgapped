@@ -7,7 +7,6 @@ use substrate_airgapped::{
 };
 
 // Example deps
-use anyhow::anyhow;
 use hex;
 use reqwest;
 use serde::{Deserialize, Serialize};
@@ -16,7 +15,7 @@ use sp_version::RuntimeVersion;
 use std::str::FromStr;
 
 type KusamaTransfer = Transfer<KusamaRuntime>;
-type Error = anyhow::Error;
+type Error = Box<dyn std::error::Error>;
 
 fn main() -> Result<(), Error> {
 	// Get the latest block hash and then make all non historic queries at that block.
@@ -90,7 +89,7 @@ fn rpc_to_local_node<T: Serialize, U: DeserializeOwned>(
 		.json(&req_body)
 		.send()?
 		.json()
-		.map_err(|e| anyhow!("RPC failed with: {:?}", e))
+		.map_err(Into::into)
 }
 
 // The below may be useful for those reading from file on an offline device... not sure where to put them
