@@ -1,9 +1,8 @@
-use codec::Encode;
 use primitive_types::H256;
 use sp_runtime::{generic::Header, traits::BlakeTwo256, DeserializeOwned};
 use substrate_airgapped::{
-	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, MortalConfig, Mortality, Tx,
-	TxConfig,
+	balances::Transfer, uxt_as_hex, uxt_as_human, CallIndex, GenericCall, KusamaRuntime,
+	MortalConfig, Mortality, Tx, TxConfig,
 };
 
 // Example deps
@@ -48,11 +47,16 @@ fn main() -> Result<(), Error> {
 		tip: 100,
 	});
 
-	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair()).expect("example to work");
-	println!("Tx (UncheckedExtrinsic): {:#?}\n", signed_tx);
+	println!("Tx (config):\n{}", tx);
 
-	let tx_encoded = hex::encode(signed_tx.encode());
-	println!("Submit this: {:#?}", tx_encoded);
+	let signed_uxt = tx.signed_uxt_from_pair(AccountKeyring::Alice.pair()).expect("example to work");
+	println!(
+		"Tx (UncheckedExtrinsic):\n{}",
+		uxt_as_human::<KusamaTransfer, KusamaRuntime>(&signed_uxt)
+	);
+
+	let uxt_encoded = uxt_as_hex::<KusamaTransfer, KusamaRuntime>(&signed_uxt);
+	println!("Submit this: {}", uxt_encoded);
 
 	Ok(())
 }
@@ -84,12 +88,7 @@ fn rpc_to_local_node<T: Serialize, U: DeserializeOwned>(
 	let client = reqwest::blocking::Client::new();
 
 	let req_body = RpcReq { jsonrpc: TWO_ZERO, id: 1, method, params };
-	client
-		.post(LOCAL_NODE_URL)
-		.json(&req_body)
-		.send()?
-		.json()
-		.map_err(Into::into)
+	client.post(LOCAL_NODE_URL).json(&req_body).send()?.json().map_err(Into::into)
 }
 
 // The below may be useful for those reading from file on an offline device... not sure where to put them

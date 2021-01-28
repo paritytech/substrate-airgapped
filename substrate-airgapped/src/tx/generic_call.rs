@@ -1,5 +1,5 @@
 use codec::{Decode, Encode, Input};
-use core::fmt::Debug;
+use core::fmt::{self, Debug, Display};
 
 /// Call arguments with the call and module index. The indexes are needed encoding.
 #[derive(Clone, Copy, Debug, PartialEq, Encode, Decode)]
@@ -27,17 +27,30 @@ impl CallIndex {
 	}
 }
 
+/// A trait convenience trait for GenericCall
+pub trait GenericCallTrait: Encode + Decode + Clone + Display {}
+impl<T> GenericCallTrait for T where T: Encode + Decode + Clone + Display {}
+
 /// Call (a.k.a dispatchable) represented by call index and argument struct.
 /// This has the ability to correctly encode and decode itself.
 #[derive(Clone, Debug, PartialEq)]
-pub struct GenericCall<C: Encode + Decode + Clone> {
+pub struct GenericCall<C: GenericCallTrait> {
 	call_index: CallIndex,
 	args: C,
 }
 
+impl<C> Display for GenericCall<C>
+where
+	C: GenericCallTrait,
+{
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "{}", self.args)
+	}
+}
+
 impl<C> GenericCall<C>
 where
-	C: Encode + Decode + Clone,
+	C: GenericCallTrait,
 {
 	/// Create a `GenericCall`
 	pub fn new(call_index: CallIndex, args: C) -> Self {
@@ -53,7 +66,7 @@ where
 	}
 }
 
-impl<C: Encode + Decode + Clone> Encode for GenericCall<C> {
+impl<C: GenericCallTrait> Encode for GenericCall<C> {
 	fn encode(&self) -> Vec<u8> {
 		let mut bytes = self.call_index.to_vec();
 		bytes.extend(self.args.encode());
@@ -62,7 +75,7 @@ impl<C: Encode + Decode + Clone> Encode for GenericCall<C> {
 	}
 }
 
-impl<C: Encode + Decode + Clone> Decode for GenericCall<C> {
+impl<C: GenericCallTrait> Decode for GenericCall<C> {
 	fn decode<I: Input>(value: &mut I) -> Result<Self, codec::Error> {
 		let value_len = value.remaining_len()?.ok_or("Codec Error: No length")?;
 		let mut buf = vec![0; value_len];

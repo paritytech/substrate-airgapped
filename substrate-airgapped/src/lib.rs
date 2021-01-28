@@ -5,13 +5,14 @@ mod error;
 mod frame;
 mod runtimes;
 mod tx;
+mod util;
 
 pub use crate::{
 	error::Error,
 	frame::{balances, system, PalletCall},
 	runtimes::KusamaRuntime,
 	tx::{
-		tx_from_parts, CallIndex, GenericCall, MortalConfig, Mortality, SignedPayload, Tx,
-		TxConfig, UncheckedExtrinsic,
+		uxt_as_hex, uxt_as_human, uxt_from_parts, CallIndex, GenericCall, GenericCallTrait,
+		MortalConfig, Mortality, SignedPayload, Tx, TxConfig, UncheckedExtrinsic,
 	},
 };
