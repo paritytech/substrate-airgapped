@@ -74,7 +74,7 @@ pub struct Tx<C: GenericCallTrait, R: System + Balances + Runtime> {
 }
 
 /// Create a tx from the senders address, a `SignedPayload` and the signature.
-pub fn uxt_from_parts<C, R>(
+pub fn tx_from_parts<C, R>(
 	sender: R::Address,
 	signature: R::Signature,
 	payload: SignedPayload<C, R>,
@@ -89,12 +89,12 @@ where
 }
 
 /// Get a human friendly form of an `UncheckedExtrinsic`.
-pub fn uxt_as_human<C, R>(uxt: &UncheckedExtrinsic<C, R>) -> String
+pub fn tx_as_human<C, R>(tx: &UncheckedExtrinsic<C, R>) -> String
 where
 	C: GenericCallTrait,
 	R: System + Balances + Runtime,
 {
-	let signature = match &uxt.signature {
+	let signature = match &tx.signature {
 		Some(sig) => {
 			format!(
 				"\n{sp}address: {}\n{sp}signature:\n{sp}{:#?}\n{sp}extra: {:#?}",
@@ -109,19 +109,19 @@ where
 
 	format!(
 		"call:\n{sp}{}\nsignature: {}",
-		uxt.function,
+		tx.function,
 		signature,
 		sp = format!("{:indent$}", "", indent = 4)
 	)
 }
 
 /// Get a hex form of an `UncheckedExtrinsic`.
-pub fn uxt_as_hex<C, R>(uxt: &UncheckedExtrinsic<C, R>) -> String
+pub fn tx_as_hex<C, R>(tx: &UncheckedExtrinsic<C, R>) -> String
 where
 	C: GenericCallTrait,
 	R: System + Balances + Runtime,
 {
-	let encoded = uxt.encode();
+	let encoded = tx.encode();
 
 	format!("0x{}", HexDisplay::from(&encoded))
 }
@@ -209,16 +209,16 @@ impl<C: GenericCallTrait, R: System + Balances + Runtime> Tx<C, R> {
 	}
 
 	/// Create a signed `UncheckedExtrinsic` (AKA transaction) using the given keyring pair to sign.
-	pub fn signed_uxt_from_pair<P>(&self, pair: P) -> Result<UncheckedExtrinsic<C, R>, Error>
+	pub fn signed_tx_from_pair<P>(&self, pair: P) -> Result<UncheckedExtrinsic<C, R>, Error>
 	where
 		P: Pair,
 		<R as Runtime>::Signature: From<<P as sp_core::Pair>::Signature>,
 	{
 		let payload = self.signed_payload()?;
 		let signature = payload.using_encoded(|payload| pair.sign(payload));
-		let uxt = uxt_from_parts::<C, R>(self.address.clone(), signature.into(), payload);
+		let tx = tx_from_parts::<C, R>(self.address.clone(), signature.into(), payload);
 
-		Ok(uxt)
+		Ok(tx)
 	}
 }
 

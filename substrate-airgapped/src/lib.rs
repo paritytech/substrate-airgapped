@@ -12,7 +12,7 @@ pub use crate::{
 	frame::{balances, system, PalletCall},
 	runtimes::KusamaRuntime,
 	tx::{
-		uxt_as_hex, uxt_as_human, uxt_from_parts, CallIndex, GenericCall, GenericCallTrait,
+		tx_as_hex, tx_as_human, tx_from_parts, CallIndex, GenericCall, GenericCallTrait,
 		MortalConfig, Mortality, SignedPayload, Tx, TxConfig, UncheckedExtrinsic,
 	},
 };

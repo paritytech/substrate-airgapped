@@ -15,7 +15,8 @@ pub(crate) fn int_as_human<T: fmt::Display>(bal: T) -> String {
 }
 
 /// Simple wrapper to display hex representation of bytes.
-// Taken from sp_core::hexdisplay to remove reliance on deps
+///
+/// Same as `sp_core::hexdisplay::HexDisplay`. Re-defined to make it easier to remove dependance on `sp-core`.
 pub(crate) struct HexDisplay<'a>(&'a [u8]);
 
 impl<'a> HexDisplay<'a> {
@@ -36,7 +37,8 @@ impl<'a> core::fmt::Display for HexDisplay<'a> {
 }
 
 /// Simple trait to transform various types to `&[u8]`
-// Taken from sp_core::hexdisplay to remove reliance on deps
+///
+/// Same as `sp_core::hexdisplay::AsBytesRef`. Re-defined to make it easier to remove dependance on `sp-core`.
 pub(crate) trait AsBytesRef {
 	/// Transform `self` into `&[u8]`.
 	fn as_bytes_ref(&self) -> &[u8];

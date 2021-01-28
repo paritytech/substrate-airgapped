@@ -1,7 +1,7 @@
 use primitive_types::H256;
 use sp_runtime::{generic::Header, traits::BlakeTwo256, DeserializeOwned};
 use substrate_airgapped::{
-	balances::Transfer, uxt_as_hex, uxt_as_human, CallIndex, GenericCall, KusamaRuntime,
+	balances::Transfer, tx_as_hex, tx_as_human, CallIndex, GenericCall, KusamaRuntime,
 	MortalConfig, Mortality, Tx, TxConfig,
 };
 
@@ -49,14 +49,14 @@ fn main() -> Result<(), Error> {
 
 	println!("Tx (config):\n{}", tx);
 
-	let signed_uxt = tx.signed_uxt_from_pair(AccountKeyring::Alice.pair()).expect("example to work");
+	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair()).expect("example to work");
 	println!(
 		"Tx (UncheckedExtrinsic):\n{}",
-		uxt_as_human::<KusamaTransfer, KusamaRuntime>(&signed_uxt)
+		tx_as_human::<KusamaTransfer, KusamaRuntime>(&signed_tx)
 	);
 
-	let uxt_encoded = uxt_as_hex::<KusamaTransfer, KusamaRuntime>(&signed_uxt);
-	println!("Submit this: {}", uxt_encoded);
+	let tx_encoded = tx_as_hex::<KusamaTransfer, KusamaRuntime>(&signed_tx);
+	println!("Submit this: {}", tx_encoded);
 
 	Ok(())
 }
