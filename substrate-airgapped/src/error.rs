@@ -1,6 +1,7 @@
 use core::fmt;
 use sp_runtime::transaction_validity::TransactionValidityError;
 
+// This is fine, but do have a look at `thiserror` and `anyhow`.
 /// Descriptive error type
 #[cfg(feature = "std")]
 #[derive(PartialEq, Eq, Clone, Debug)]

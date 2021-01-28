@@ -21,6 +21,7 @@ impl CallIndex {
 	pub fn new(module_index: u8, call_index: u8) -> CallIndex {
 		CallIndex { module_index, call_index }
 	}
+	// why not [u8; 2]?
 	/// Create a vec representing the call index
 	pub fn to_vec(&self) -> Vec<u8> {
 		vec![self.module_index, self.call_index]
@@ -56,6 +57,20 @@ where
 impl<C: Encode + Decode + Clone> Encode for GenericCall<C> {
 	fn encode(&self) -> Vec<u8> {
 		let mut bytes = self.call_index.to_vec();
+		// Avoid unnecessary transient `Vec` here with: self.args.encode_to(&mut bytes);
+		//
+		// if you turn call_index into [u8; 2], you can produce the whole output with just one allocation:
+		//
+		// ```rust
+		// let mut bytes = Vec::with_capacity(2 + self.args.encoded_size());
+		// bytes.extend_from_slice(&self.call_index.to_bytes());
+		// self.args.encode_to(&mut bytes);
+		// ```
+		//
+		// Haven't tried it, but I'm 87.3% sure it's correct.
+		//
+		// PS: Always use `exted_from_slice` instead of `extend` when you can,
+		// the former is a simple memcpy, the latter will push one byte at a time.
 		bytes.extend(self.args.encode());
 
 		bytes

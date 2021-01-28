@@ -115,11 +115,13 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 		&self.nonce
 	}
 
+	// That pointer is larger on stack than that u32 :P, just return u32
 	/// Transaction version associated with the runtime.
 	pub fn tx_version(&self) -> &u32 {
 		&self.tx_version
 	}
 
+	// ditto
 	/// Api specification version of the runtime.
 	pub fn spec_version(&self) -> &u32 {
 		&self.spec_version

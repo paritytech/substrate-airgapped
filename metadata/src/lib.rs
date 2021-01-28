@@ -20,6 +20,10 @@ impl Metadata {
 		&self,
 		name: S,
 	) -> Result<&ModuleWithCalls, substrate_airgapped::Error> {
+		// This is not idiomatic Rust, you will do an allocation when one isn't needed.
+		// You can do `name: impl AsRef<str>`, although simple `name: &str` is probably best.
+		//
+		// Is there a usecase where you need to support arbitrary non-string keys?
 		let name = name.to_string();
 		self.modules_with_calls
 			.get(&name)
@@ -42,6 +46,7 @@ impl Metadata {
 #[derive(Clone, Debug)]
 struct ModuleWithCalls {
 	index: u8,
+	// This name is already the key in the map, do we need to duplicate it?
 	name: String,
 	calls: HashMap<String, u8>,
 }
@@ -61,9 +66,17 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 		let mut modules_with_calls = HashMap::new();
 		for module in convert(meta.modules)?.into_iter() {
 			if let Some(calls_meta) = module.calls {
+				// FYI: for stuff like this you can collect an iterator of (K, V)
+				// into a `HashMap` by just calling `.collect()` on that iterator.
+				// It might be easier to read, and will likely be faster since the
+				// iterator can use size hinting to make sure the map comes with
+				// appropriate preallocated size.
 				let mut calls = HashMap::new();
 				for (index, call) in convert(calls_meta)?.into_iter().enumerate() {
 					let call_name = convert(call.name)?;
+					// would be better to use TryFrom here: u8::try_from(index)?,
+					// when you cast integers like that they get truncated, so 257
+					// becomes 1.
 					calls.insert(call_name.to_string(), index as u8);
 				}
 
