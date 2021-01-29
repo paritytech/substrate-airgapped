@@ -64,7 +64,7 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 					.into_iter()
 					.enumerate()
 					.map(|(index, call)| {
-						let call_name: String = convert(call.name)?;
+						let call_name= convert(call.name)?;
 						let index = u8::try_from(index)?;
 
 						Ok((call_name, index))

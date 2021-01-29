@@ -9,11 +9,11 @@ pub struct CallIndex {
 }
 
 impl CallIndex {
-	/// Get `module`, the index of the module the call is in
+	/// Get `module`, the index of the module the call is in.
 	pub fn module_index(&self) -> u8 {
 		self.module_index
 	}
-	/// Get `call_index`, the index of the call in the module
+	/// Get `call_index`, the index of the call in the module.
 	pub fn call_index(&self) -> u8 {
 		self.call_index
 	}
@@ -21,9 +21,9 @@ impl CallIndex {
 	pub fn new(module_index: u8, call_index: u8) -> CallIndex {
 		CallIndex { module_index, call_index }
 	}
-	/// Create a vec representing the call index
-	pub fn to_vec(&self) -> Vec<u8> {
-		vec![self.module_index, self.call_index]
+	/// Create a `[u8; 2]` representing the call index.
+	pub fn to_bytes(&self) -> [u8; 2] {
+		[self.module_index, self.call_index]
 	}
 }
 
@@ -55,8 +55,11 @@ where
 
 impl<C: Encode + Decode + Clone> Encode for GenericCall<C> {
 	fn encode(&self) -> Vec<u8> {
-		let mut bytes = self.call_index.to_vec();
-		bytes.extend(self.args.encode());
+		let encoded_args = self.args.encode();
+		let encoded_call_index = self.call_index.to_bytes();
+		let mut bytes = Vec::with_capacity(encoded_call_index.len() + encoded_args.len());
+		bytes.extend_from_slice(&encoded_call_index);
+		bytes.extend_from_slice(&encoded_args);
 
 		bytes
 	}
@@ -91,7 +94,7 @@ mod test {
 		let transfer = GenericCall::new(CallIndex::new(5, 0), transfer_args);
 
 		// Independent parts of the call encode as expected
-		assert_eq!(transfer.call_index.to_vec(), [5, 0]);
+		assert_eq!(transfer.call_index.to_bytes(), [5, 0]);
 		assert_eq!(
 			transfer.args.encode(),
 			[
