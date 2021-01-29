@@ -1,4 +1,4 @@
-use core::fmt;
+use core::{ fmt, num::TryFromIntError};
 use sp_runtime::transaction_validity::TransactionValidityError;
 
 /// Descriptive error type
@@ -72,6 +72,18 @@ impl From<TransactionValidityError> for Error {
 
 	#[cfg(not(feature = "std"))]
 	fn from(_t: TransactionValidityError) -> Error {
+		Error
+	}
+}
+
+impl From<TryFromIntError> for Error {
+	#[cfg(feature = "std")]
+	fn from(t: TryFromIntError) -> Error {
+		Error(t.into())
+	}
+
+	#[cfg(not(feature = "std"))]
+	fn from(_t: TryFromIntError) -> Error {
 		Error
 	}
 }
