@@ -2,7 +2,7 @@
 #![warn(missing_docs)]
 
 use codec::alloc::collections::HashMap;
-use core::convert::{TryFrom};
+use core::convert::TryFrom;
 use frame_metadata::{DecodeDifferent, META_RESERVED};
 use substrate_airgapped::{CallIndex, PalletCall};
 
@@ -25,7 +25,7 @@ impl Metadata {
 			.ok_or_else(|| "Module could not be found in runtime metadata".into())
 	}
 
-	/// Get the call index for a `PalletCall` in this `Metadata`
+	/// Get the `CallIndex` for a `PalletCall` in this `Metadata`
 	pub fn find_call_index<C: PalletCall>(&self) -> Result<CallIndex, substrate_airgapped::Error> {
 		let module_with_calls = self.module_with_calls(C::PALLET)?;
 		let module_index = module_with_calls.index;
@@ -60,11 +60,11 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 		for module in convert(meta.modules)?.into_iter() {
 			if let Some(calls_meta) = module.calls {
 				// let mut calls = HashMap::new();
-				let calls= convert(calls_meta)?
+				let calls = convert(calls_meta)?
 					.into_iter()
 					.enumerate()
 					.map(|(index, call)| {
-						let call_name= convert(call.name)?;
+						let call_name = convert(call.name)?;
 						let index = u8::try_from(index)?;
 
 						Ok((call_name, index))
