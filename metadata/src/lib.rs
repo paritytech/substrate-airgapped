@@ -59,7 +59,6 @@ impl TryFrom<RuntimeMetadataPrefixed> for Metadata {
 		let mut modules_with_calls = HashMap::new();
 		for module in convert(meta.modules)?.into_iter() {
 			if let Some(calls_meta) = module.calls {
-				// let mut calls = HashMap::new();
 				let calls = convert(calls_meta)?
 					.into_iter()
 					.enumerate()
