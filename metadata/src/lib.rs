@@ -1,7 +1,7 @@
 //! Runtime metadata decoding and lookup support for substrate-airgapped
 #![warn(missing_docs)]
 
-use codec::alloc::collections::HashMap;
+use std::collections::HashMap;
 use core::convert::TryFrom;
 use frame_metadata::{DecodeDifferent, META_RESERVED};
 use substrate_airgapped::{CallIndex, PalletCall};

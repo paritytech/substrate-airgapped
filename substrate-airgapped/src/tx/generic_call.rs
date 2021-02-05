@@ -57,7 +57,7 @@ impl<C: Encode + Decode + Clone> Encode for GenericCall<C> {
 	fn encode(&self) -> Vec<u8> {
 		let encoded_args = self.args.encode();
 		let encoded_call_index = self.call_index.to_bytes();
-		let mut bytes = Vec::with_capacity(encoded_call_index.len() + encoded_args.len());
+		let mut bytes = Vec::with_capacity(2 + encoded_args.len());
 		bytes.extend_from_slice(&encoded_call_index);
 		bytes.extend_from_slice(&encoded_args);
 
