@@ -84,12 +84,7 @@ fn rpc_to_local_node<T: Serialize, U: DeserializeOwned>(
 	let client = reqwest::blocking::Client::new();
 
 	let req_body = RpcReq { jsonrpc: TWO_ZERO, id: 1, method, params };
-	client
-		.post(LOCAL_NODE_URL)
-		.json(&req_body)
-		.send()?
-		.json()
-		.map_err(Into::into)
+	client.post(LOCAL_NODE_URL).json(&req_body).send()?.json().map_err(Into::into)
 }
 
 // The below may be useful for those reading from file on an offline device... not sure where to put them

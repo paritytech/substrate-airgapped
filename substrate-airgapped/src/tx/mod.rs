@@ -116,13 +116,13 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 	}
 
 	/// Transaction version associated with the runtime.
-	pub fn tx_version(&self) -> &u32 {
-		&self.tx_version
+	pub fn tx_version(&self) -> u32 {
+		self.tx_version
 	}
 
 	/// Api specification version of the runtime.
-	pub fn spec_version(&self) -> &u32 {
-		&self.spec_version
+	pub fn spec_version(&self) -> u32 {
+		self.spec_version
 	}
 
 	/// Hash of the networks genesis block.
