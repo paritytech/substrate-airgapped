@@ -1,9 +1,10 @@
 pub(crate) mod extra;
 mod generic_call;
 mod mortality;
+use sp_core::crypto::Ss58Codec;
 
 pub use self::{
-	generic_call::{CallIndex, GenericCall},
+	generic_call::{CallIndex, GenericCall, GenericCallTrait},
 	mortality::{MortalConfig, Mortality},
 };
 
@@ -11,9 +12,11 @@ use self::extra::{Extra, SignedExtra};
 use crate::{
 	frame::{balances::Balances, system::System},
 	runtimes::Runtime,
+	util::{int_as_human, HexDisplay},
 	Error,
 };
-use codec::{Decode, Encode};
+use codec::Encode;
+use core::fmt::{self, Display};
 use sp_core::Pair;
 use sp_runtime::generic::Era;
 
@@ -30,7 +33,7 @@ pub type SignedPayload<C, R> = sp_runtime::generic::SignedPayload<GenericCall<C>
 
 /// Configuration options for a Tx
 #[derive(Clone, PartialEq, Debug)]
-pub struct TxConfig<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
+pub struct TxConfig<C: GenericCallTrait, R: System + Balances + Runtime> {
 	/// Call with all info for encoding and decoding.
 	pub call: GenericCall<C>,
 	/// Signers Address.
@@ -51,11 +54,11 @@ pub struct TxConfig<C: Encode + Decode + Clone, R: System + Balances + Runtime> 
 
 /// Transaction builder with all the components to create a signing payload.
 #[derive(Clone, PartialEq, Debug)]
-pub struct Tx<C: Encode + Decode + Clone, R: System + Balances + Runtime> {
+pub struct Tx<C: GenericCallTrait, R: System + Balances + Runtime> {
 	/// Call with all info for encoding and decoding.
 	call: GenericCall<C>,
 	/// Signers Address.
-	address: R::Address,
+	address: <R as System>::Address,
 	/// Signers nonce.
 	nonce: R::Index,
 	/// Transaction version associated with the runtime.
@@ -77,7 +80,7 @@ pub fn tx_from_parts<C, R>(
 	payload: SignedPayload<C, R>,
 ) -> UncheckedExtrinsic<C, R>
 where
-	C: Encode + Decode + Clone,
+	C: GenericCallTrait,
 	R: System + Runtime,
 {
 	let (call, extra, _) = payload.deconstruct();
@@ -85,7 +88,45 @@ where
 	UncheckedExtrinsic::<C, R>::new_signed(call, sender, signature, extra)
 }
 
-impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
+/// Get a human friendly form of an `UncheckedExtrinsic`.
+pub fn tx_as_human<C, R>(tx: &UncheckedExtrinsic<C, R>) -> String
+where
+	C: GenericCallTrait,
+	R: System + Balances + Runtime,
+{
+	let signature = match &tx.signature {
+		Some(sig) => {
+			format!(
+				"\n{sp}address: {}\n{sp}signature:\n{sp}{:#?}\n{sp}extra: {:#?}",
+				sig.0.to_ss58check_with_version(R::SS58_ADDRESS_FORMAT),
+				sig.1, // TODO Debug display includes signature type
+				sig.2,  // TODO display for unchecked extra can be improved
+				sp = format!("{:indent$}", "", indent = 4)
+			)
+		}
+		None => "unsigned".to_string(),
+	};
+
+	format!(
+		"call:\n{sp}{}\nsignature: {}",
+		tx.function,
+		signature,
+		sp = format!("{:indent$}", "", indent = 4)
+	)
+}
+
+/// Get a hex form of an `UncheckedExtrinsic`.
+pub fn tx_as_hex<C, R>(tx: &UncheckedExtrinsic<C, R>) -> String
+where
+	C: GenericCallTrait,
+	R: System + Balances + Runtime,
+{
+	let encoded = tx.encode();
+
+	format!("0x{}", HexDisplay::from(&encoded))
+}
+
+impl<C: GenericCallTrait, R: System + Balances + Runtime> Tx<C, R> {
 	/// Create a transaction builder from TxConfig
 	pub fn new(config: TxConfig<C, R>) -> Self {
 		Tx {
@@ -178,6 +219,26 @@ impl<C: Encode + Decode + Clone, R: System + Balances + Runtime> Tx<C, R> {
 		let tx = tx_from_parts::<C, R>(self.address.clone(), signature.into(), payload);
 
 		Ok(tx)
+	}
+}
+
+impl<C: GenericCallTrait, R: System + Balances + Runtime> Display for Tx<C, R> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let ss58_address =
+			self.address.to_ss58check_with_version(<R as Runtime>::SS58_ADDRESS_FORMAT);
+		write!(
+			f,
+			"call:\n{sp}{}\naddress: {}\nmortality:\n{sp}{}\nnonce: {}\ntip: {}\ngenesis_hash: {:#?}\nspec_version: {}\ntx_version: {}",
+			self.call,
+			ss58_address,
+			self.mortality,
+			int_as_human(self.nonce),
+			int_as_human(self.tip),
+			self.genesis_hash,
+			int_as_human(self.spec_version),
+			int_as_human(self.tx_version),
+			sp = format!("{:indent$}", "", indent = 8)
+		)
 	}
 }
 

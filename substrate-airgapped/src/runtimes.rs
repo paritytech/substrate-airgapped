@@ -4,6 +4,7 @@ use crate::{
 };
 use codec::{Decode, Encode};
 use core::fmt::Debug;
+use sp_core::crypto::Ss58AddressFormat;
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	MultiSignature,
@@ -15,6 +16,8 @@ pub trait Runtime: System + Balances + Sized + Send + Sync + 'static {
 	type Signature: Verify + Encode + Debug + Decode + Eq + Send + Sync + Clone + 'static;
 	/// Transaction extras.
 	type Extra: SignedExtra<Self> + Send + Decode + Sync + 'static;
+	/// SS58prefix associated with the network.
+	const SS58_ADDRESS_FORMAT: Ss58AddressFormat;
 }
 
 /// Kusama runtime specific types
@@ -24,6 +27,7 @@ pub struct KusamaRuntime;
 impl Runtime for KusamaRuntime {
 	type Signature = MultiSignature;
 	type Extra = DefaultExtra<Self>;
+	const SS58_ADDRESS_FORMAT: Ss58AddressFormat = Ss58AddressFormat::KusamaAccount;
 }
 
 impl System for KusamaRuntime {

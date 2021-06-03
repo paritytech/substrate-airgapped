@@ -1,9 +1,8 @@
-use codec::Encode;
 use primitive_types::H256;
 use sp_runtime::{generic::Header, traits::BlakeTwo256, DeserializeOwned};
 use substrate_airgapped::{
-	balances::Transfer, CallIndex, GenericCall, KusamaRuntime, MortalConfig, Mortality, Tx,
-	TxConfig,
+	balances::Transfer, tx_as_hex, tx_as_human, CallIndex, GenericCall, KusamaRuntime,
+	MortalConfig, Mortality, Tx, TxConfig,
 };
 
 // Example deps
@@ -48,11 +47,16 @@ fn main() -> Result<(), Error> {
 		tip: 100,
 	});
 
-	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair()).expect("example to work");
-	println!("Tx (UncheckedExtrinsic): {:#?}\n", signed_tx);
+	println!("Tx (config):\n{}", tx);
 
-	let tx_encoded = hex::encode(signed_tx.encode());
-	println!("Submit this: {:#?}", tx_encoded);
+	let signed_tx = tx.signed_tx_from_pair(AccountKeyring::Alice.pair()).expect("example to work");
+	println!(
+		"Tx (UncheckedExtrinsic):\n{}",
+		tx_as_human::<KusamaTransfer, KusamaRuntime>(&signed_tx)
+	);
+
+	let tx_encoded = tx_as_hex::<KusamaTransfer, KusamaRuntime>(&signed_tx);
+	println!("Submit this: {}", tx_encoded);
 
 	Ok(())
 }
